@@ -10,7 +10,7 @@
 
 ##Technical
 
-**Outline**
+**Flow**
 * `updateSidebar()`
     * `Reddit.getAuthToken()`
     * `Reddit.getSidebarTemplate()`
