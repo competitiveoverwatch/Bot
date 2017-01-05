@@ -1,6 +1,6 @@
 # [/r/CompetitiveOverwatch](https://reddit.com/r/competitiveoverwatch)'s Sidebar Bot
 
-###About
+##About
 * Runs hourly
 * Fetches sidebar template from wiki
 * Replaces `{{MEGATHREADS}}` placeholder with the latest links to 3 weekly megathreads
@@ -8,7 +8,7 @@
     - Please remember to [follow their API guidelines](http://www.teamliquid.net/forum/hidden/491339-liquipedia-api-usage-guidelines)
 * Updates actual sidebar text
 
-###Technical
+##Technical
 
 **Outline**
 * `updateSidebar()`
@@ -18,6 +18,7 @@
     * `updateEvents()`
     * `Reddit.postNewSidebar()`
 
+**Information**
 * Based on [chromakode/reddit-sidebar-updater](https://github.com/chromakode/reddit-sidebar-updater) with heavy modifications
 * `UpdateSidebar.gs` uses an hourly trigger
 * `Reddit.gs` is contained within a separate `Reddit` 'project', and used as a `Library` for the main `Sidebar Bot` project
