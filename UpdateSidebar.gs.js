@@ -93,8 +93,8 @@ function getMegathreadsJSON(searchUrl) {
 }
 
 function updateMegathreads(authToken, sidebar) {
-    var MEGATHREAD_TITLES = ["LFG: Find Players & Teams", "Tutoring: Questions & VOD Reviews", "Discussion Megathread"]
-    var MEGATHREAD_KEYWORDS = ["lfg", "tutoring", "discussion"]
+    var MEGATHREAD_TITLES = ["LFG: Find Players & Teams", "Advice: Questions & VOD Reviews", "Discussion Megathread"]
+    var MEGATHREAD_KEYWORDS = ["lfg", "advice", "discussion"]
     
     const searchParams = {
         subreddit: "competitiveoverwatch",
@@ -194,7 +194,7 @@ function getEventsJSON() {
             "User-Agent": USER_AGENT
         }
     })
-    cache.put(CACHE_KEY, responseData, 7200) //Cache for 2 hours (7200 seconds)
+    cache.put(CACHE_KEY, responseData, 10800) //Cache for 3 hours (10800 seconds)
     return responseData
 }
 
