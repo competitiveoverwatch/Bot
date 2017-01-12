@@ -42,7 +42,10 @@ var CLIENT_SECRET = scriptProperties.getProperty("CLIENT_SECRET")  // OAuth2 cli
 var USERNAME = scriptProperties.getProperty("USERNAME")
 var PASSWORD = scriptProperties.getProperty("PASSWORD")
 
-var USER_AGENT = "/r/" + SUBREDDIT + " sidebar updater. (Contact us via /r/" + SUBREDDIT + " modmail)"
+var USER_AGENT = "r/" + SUBREDDIT + " sidebar updater. (Contact us via r/" + SUBREDDIT + " modmail)"
+
+//Twitch
+var TWITCH_CLIENT_ID = scriptProperties.getProperty("TWITCH_CLIENT_ID")
 
 function updateSidebar() {
     const authToken = Reddit.getAuthToken(USERNAME, PASSWORD, CLIENT_ID, CLIENT_SECRET)
@@ -194,7 +197,7 @@ function getEventsJSON() {
             "User-Agent": USER_AGENT
         }
     })
-    cache.put(CACHE_KEY, responseData, 10800) //Cache for 3 hours (10800 seconds)
+    cache.put(CACHE_KEY, responseData, 21600) //Cache for 6 hours (21600 seconds)
     return responseData
 }
 
@@ -204,10 +207,10 @@ function numberWithCommas(x) {
 }
 
 function updateEvents(authToken, sidebar) {
-    
+
     var events = JSON.parse(getEventsJSON()).query.results
     
-    const eventFormat = "####[{0}]({1}){2}\n\n{3}\n\n"
+    const eventFormat = "####{0}[{1}]({2}){3}\n\n{4}\n\n"
     const prizepoolFormat = "\n\n${0} Prize Pool"
     const dateFormat = "**{0} – {1}**"
     
@@ -219,9 +222,17 @@ function updateEvents(authToken, sidebar) {
         var eventName = event.printouts["Has name"]
         
         var twitchUrl = event.printouts["Has tournament twitch"]
+        var twitchChannelLive = false
+        var liveBadge
         if (twitchUrl == "") {
             twitchUrl = event.fullurl
+            
+        } else {
+            var urlComponents = twitchUrl.toString().split("/")
+            var twitchChannelName = urlComponents[urlComponents.length-1]
+            twitchChannelLive = Twitch.isChannelLive(TWITCH_CLIENT_ID, twitchChannelName)
         }
+        var liveBadge = twitchChannelLive? "**LIVE: **" : ""
         
         var startTimestamp = event.printouts["Has start date"] * 1000
         var endTimestamp = event.printouts["Has end date"] * 1000
@@ -234,7 +245,6 @@ function updateEvents(authToken, sidebar) {
         //If start == end, event may have been rescheduled/something else happened
         //e.g. this happened with Masters Gaming Arena 2016
         if (startTimestamp == endTimestamp) {
-        
             eventDates = "Dates TBA"
         
         } else {
@@ -265,7 +275,7 @@ function updateEvents(authToken, sidebar) {
             formattedPrizepool = prizepoolFormat.format(numberWithCommas(prizepool))
         }
         
-        var newEvent = eventFormat.format(eventName,twitchUrl,formattedPrizepool,eventDates)
+        var newEvent = eventFormat.format(liveBadge,eventName,twitchUrl,formattedPrizepool,eventDates)
 
         if (sidebarLength + newEvent.length > Reddit.SIDEBAR_LENGTH_LIMIT) {
             break
