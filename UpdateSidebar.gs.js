@@ -210,7 +210,7 @@ function updateEvents(authToken, sidebar) {
 
     var events = JSON.parse(getEventsJSON()).query.results
     
-    const eventFormat = "####{0}[{1}]({2}){3}\n\n{4}\n\n"
+    const eventFormat = "####[{0}{1}]({2}){3}\n\n{4}\n\n"
     const prizepoolFormat = "\n\n${0} Prize Pool"
     const dateFormat = "**{0} – {1}**"
     
@@ -232,7 +232,7 @@ function updateEvents(authToken, sidebar) {
             var twitchChannelName = urlComponents[urlComponents.length-1]
             twitchChannelLive = Twitch.isChannelLive(TWITCH_CLIENT_ID, twitchChannelName)
         }
-        var liveBadge = twitchChannelLive? "**LIVE: **" : ""
+        var liveBadge = (twitchChannelLive == true)? "**LIVE:** " : ""
         
         var startTimestamp = event.printouts["Has start date"] * 1000
         var endTimestamp = event.printouts["Has end date"] * 1000
