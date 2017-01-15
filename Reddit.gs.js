@@ -28,12 +28,17 @@ function getAuthToken(username, password, clientId, clientSecret) {
     return authToken
 }
 
-//Get sidebar template from subreddit"s wiki
-function getSidebarTemplate(authToken, subreddit) {
-    var templateData = UrlFetchApp.fetch("https://oauth.reddit.com/r/" + subreddit + "/wiki/sidebar_template.json", {
+function getWikiPageJSON(authToken, subreddit, pageName) {
+    return UrlFetchApp.fetch("https://oauth.reddit.com/r/" + subreddit + "/wiki/" + pageName + ".json", {
         headers: {"Authorization": "bearer " + authToken}
     })
+}
+
+//Get sidebar template from subreddit"s wiki
+function getSidebarTemplate(authToken, subreddit) {
+    var templateData = getWikiPageJSON(authToken, subreddit, "sidebar_template")
     templateData = JSON.parse(templateData)
+    
     var template = templateData["data"]["content_md"]
     template = template
         .replace(/&amp;/g, "&")
@@ -49,7 +54,7 @@ function postNewSidebar(authToken, subreddit, sidebar) {
         payload: {
             content: sidebar,
             page: "config/sidebar",
-            reason: "Automated Google Apps Script update @ " + Utilities.formatDate(new Date(), "America/Los_Angeles", "d MMM h:mma z")
+            reason: "Automated Google Apps Script update"
         },
         method: "post",
         headers: {"Authorization": "bearer " + authToken},
