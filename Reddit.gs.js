@@ -49,7 +49,7 @@ function getSidebarTemplate(authToken, subreddit) {
     return template
 }
 
-function postNewSidebar(authToken, subreddit, sidebar) {
+function updateSidebar(authToken, subreddit, sidebar) {
     const result = UrlFetchApp.fetch("https://oauth.reddit.com/r/" + subreddit + "/api/wiki/edit", {
         payload: {
             content: sidebar,

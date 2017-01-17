@@ -54,7 +54,7 @@ function updateSidebar() {
     sidebar = updateMegathreads(authToken, sidebar)
     sidebar = updateEvents(authToken, sidebar)
     
-    Reddit.postNewSidebar(authToken, SUBREDDIT, sidebar)
+    Reddit.updateSidebar(authToken, SUBREDDIT, sidebar)
 }
 
 //String formatting solution from http://stackoverflow.com/a/21844011/447697
@@ -109,7 +109,7 @@ function updateMegathreads(authToken, sidebar) {
     const searchURLSuffix = "&" + encodeURLParams({
         restrict_sr:"on",
         sort:"new",
-        t:"week"
+        t:"month"
     })
     
     const searchURL = "https://api.reddit.com/r/"+SUBREDDIT+"/search.json?q=" + Object.keys(searchParams).map(function(k) {
@@ -123,6 +123,10 @@ function updateMegathreads(authToken, sidebar) {
     var megathreadsStr = ""
     
     for (var key in megathreads) {
+        if (MEGATHREAD_KEYWORDS.length == 0) {
+            break
+        }
+    
         if (megathreads.hasOwnProperty(key)) {
             var megathread = megathreads[key].data
             var title = megathread.title.toLowerCase()
