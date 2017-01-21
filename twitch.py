@@ -1,3 +1,4 @@
+import const
 import credentials
 import requests
 
@@ -6,12 +7,13 @@ class Twitch():
 
     __headers = {
         "Accept": "application/vnd.twitchtv.v5+json",
-        "Client-ID": credentials.twitch_client_id
+        "Client-ID": credentials.twitch_client_id,
+        "User-Agent": const.user_agent
     }
 
     @classmethod
     def __get(cls, path, *params):
-        
+
         data = None
 
         url = Twitch.__api_base.format(path)
@@ -41,7 +43,7 @@ class Twitch():
         if data is not None:
             channels = data["channels"]
             if len(channels) == 0:
-                print("Failed to get id for ", format(channel_name))
+                print("Failed to get id for {}".format(channel_name))
                 return None
 
             else:
