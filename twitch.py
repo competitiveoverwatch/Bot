@@ -43,7 +43,7 @@ class Twitch():
         if data is not None:
             channels = data["channels"]
             if len(channels) == 0:
-                print("Failed to get id for {}".format(channel_name))
+                print(f"Failed to get id for {channel_name}")
                 return None
 
             else:

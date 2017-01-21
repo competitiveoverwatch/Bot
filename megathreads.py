@@ -1,6 +1,7 @@
 import const
+import ScheduledThread
 
-def get_megathreads(subreddit):
+def get_formatted_latest(subreddit):
     titles = ["LFG: Find Players & Teams", "Advice: Questions & VOD Reviews", "Daily Balance & Meta Megathread"]
     keywords = ["lfg", "advice", "discussion"]
 
@@ -22,3 +23,21 @@ def get_megathreads(subreddit):
                 megathreads += const.format_megathread.format(title, thread.url)
 
     return megathreads
+
+def post(subreddit, scheduled_thread):
+    if isinstance(scheduled_thread, ScheduledThread):
+
+        if scheduled_thread.is_valid():
+            submission = subreddit.submit(scheduled_thread.title, selftext = scheduled_thread.text, send_replies = False)
+
+            # TODO: Test how flair choices work
+            # choices = submission.flair.choices()
+            # template_id = next(x for x in choices
+            #                    if x['flair_text_editable'])['flair_template_id']
+            # submission.flair.select(template_id)
+
+        else:
+            raise ValueError("Invalid schedule thread")
+
+    else:
+        raise TypeError("Wrong argument type for `post(scheduled_thread)` (expected ScheduledThread)")

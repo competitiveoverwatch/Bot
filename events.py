@@ -85,7 +85,7 @@ def __format_event_dates(has_start_date, has_end_date):
 
         return const.format_event_date_line.format(formatted_start, formatted_end)
 
-def get(sidebar_length):
+def get_formatted(sidebar_length):
     data = __get_events_json()
 
     if data is None:

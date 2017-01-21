@@ -1,9 +1,12 @@
 subreddit = "competitiveoverwatch"
+key_color = "#545452" # Reddit's "dark grey"
+spoilers_enabled = False
+
 user_agent = "r/" + subreddit + " sidebar updater. (Contact us via r/" + subreddit + " modmail)"
 
 # Doubled from 5,120 to 10,240 in August '16
 # https://www.reddit.com/r/changelog/comments/4x91ql/reddit_change_updates_to_the_sidebar/
-sidebar_length_limit = 10240
+sidebar_length_limit = 10_240
 
 ### Sidebar formatting
 
