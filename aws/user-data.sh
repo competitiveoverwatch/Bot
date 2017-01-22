@@ -33,7 +33,7 @@ else
 	echo "Cloned bot"
 fi
 
-chmod +x aws-setup.sh
+chmod +x ./aws/setup.sh
 
 echo "Executing setup"
-./aws/aws-setup.sh
+./aws/setup.sh
