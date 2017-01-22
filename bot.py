@@ -1,59 +1,94 @@
-import const
-import credentials
+from config import const, creds
 
-import events
-import megathreads
+from modules import events, megathreads
 
 import requests
 import requests_cache
 
 import praw
 
-import threading
+from threading import Event, Thread
+import time
 
 cache_seconds = 60 * 4.5 # Cache for 4.5 minutes
-sidebar_update_seconds = 60 * 5 # Update sidebar every 5 minutes
+sidebar_repeat_seconds = 60 * 5 # Update sidebar every 5 minutes
+megathread_repeat_seconds = 60 * 60 # Post megathreads if necessary every hour
 
-def update_sidebar(subreddit):
+class BotThread(Thread):
+    def __init__(self, subreddit, repeat_time):
+        super().__init__()
+        self.subreddit = subreddit
+        self.repeat_time = repeat_time
 
-    print("\nSIDEBAR: Beginning update")
+    def run(self):
+        while True:
+            self.main()
+            time.sleep(self.repeat_time)
 
-    sidebar_template = subreddit.wiki["sidebar_template"].content_md
-    sidebar_length = len(sidebar_template)
-    
-    megathreads_str = megathreads.get_formatted_latest(subreddit)
-    events_str = events.get_formatted(sidebar_length)
+    # Subclasses override
+    def main(self):
+        pass
 
-    if megathreads_str is None:
-        print("SIDEBAR: Failed to fetch megathreads")
+class SidebarThread(BotThread):
 
-    elif events_str is None:
-        print("SIDEBAR: Failed to fetch events")
+    def main(self):
+        print("\nSIDEBAR: Beginning update")
 
-    else:
-        new_sidebar = sidebar_template.replace(const.sidebar_replacement_megathreads, megathreads_str)
-        new_sidebar = new_sidebar.replace(const.sidebar_replacement_events, events_str)
+        sidebar_template = self.subreddit.wiki["sidebar_template"].content_md
+        sidebar_length = len(sidebar_template)
+        
+        megathreads_str = megathreads.get_formatted_latest(self.subreddit)
+        events_str = events.get_formatted(sidebar_length)
 
-        subreddit.mod.update(description = new_sidebar, key_color = const.key_color, spoilers_enabled = const.spoilers_enabled)
+        if megathreads_str is None:
+            print("SIDEBAR: Failed to fetch megathreads")
 
-        print("SIDEBAR: Successfully updated")
+        elif events_str is None:
+            print("SIDEBAR: Failed to fetch events")
 
-    print("SIDEBAR: Completed update")
+        else:
+            new_sidebar = sidebar_template.replace(const.sidebar_replacement_megathreads, megathreads_str)
+            new_sidebar = new_sidebar.replace(const.sidebar_replacement_events, events_str)
+
+            print(new_sidebar)
+
+            #self.subreddit.mod.update(description = new_sidebar, key_color = const.key_color, spoilers_enabled = const.spoilers_enabled)
+
+            print("SIDEBAR: Successfully updated")
+
+        print("SIDEBAR: Completed update")
+
+class ModerationThread(BotThread):
+
+    def main(self):
+        pass
+
+class MegathreadSchedulerThread(BotThread):
+
+    def main(self):
+        pass
+
+def start_thread(class_name, subreddit, repeat_time):
+    t = class_name(subreddit, repeat_time)
+    t.daemon = True
+    t.start()
 
 def main():
+
     requests_cache.install_cache(expire_after = cache_seconds, old_data_on_error = True)
 
-    reddit = praw.Reddit(client_id = credentials.client_id,
-                         client_secret = credentials.client_secret,
-                         password = credentials.password,
+    reddit = praw.Reddit(client_id = creds.client_id,
+                         client_secret = creds.client_secret,
+                         password = creds.password,
                          user_agent = const.user_agent,
-                         username = credentials.username)
+                         username = creds.username)
 
     subreddit = reddit.subreddit(const.subreddit)
 
-    update_sidebar(subreddit)
+    # start_thread(ModerationThread, subreddit, )
+    start_thread(SidebarThread, subreddit, sidebar_repeat_seconds)
 
-    sidebar_timer = threading.Timer(sidebar_update_seconds, update_sidebar, [subreddit])
-    sidebar_timer.start()
+    keep_alive_event = Event()
+    keep_alive_event.wait()
 
 main()

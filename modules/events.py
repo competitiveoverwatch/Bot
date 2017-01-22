@@ -1,8 +1,8 @@
-import const
+from config import const
 
 import datetime
 import requests
-from twitch import Twitch
+from modules.twitch import Twitch
 from urllib.parse import urlparse
 
 def __get_events_json():

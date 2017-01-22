@@ -123,4 +123,4 @@ ENV/
 
 # Custom
 cache.sqlite
-credentials.py
+creds.py

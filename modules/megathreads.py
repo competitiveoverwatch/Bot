@@ -1,5 +1,5 @@
-import const
-import ScheduledThread
+from config import const
+from modules import ScheduledThread
 
 def get_formatted_latest(subreddit):
     titles = ["LFG: Find Players & Teams", "Advice: Questions & VOD Reviews", "Daily Balance & Meta Megathread"]

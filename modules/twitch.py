@@ -1,5 +1,4 @@
-import const
-import credentials
+from config import const, creds
 import requests
 
 class Twitch():
@@ -7,7 +6,7 @@ class Twitch():
 
     __headers = {
         "Accept": "application/vnd.twitchtv.v5+json",
-        "Client-ID": credentials.twitch_client_id,
+        "Client-ID": creds.twitch_client_id,
         "User-Agent": const.user_agent
     }
 
