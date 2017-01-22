@@ -85,7 +85,7 @@ def main():
 
     subreddit = reddit.subreddit(const.subreddit)
 
-    #tart_thread(ModerationThread, subreddit, )
+    #start_thread(ModerationThread, subreddit, )
     start_thread(SidebarThread, subreddit, sidebar_repeat_seconds)
 
     keep_alive_event = Event()
