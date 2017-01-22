@@ -9,7 +9,9 @@ then
 	rm get-pip.py
 fi
 
-echo "Installed dependencies, updated and upgraded"
+echo "Installed pip, updated and upgraded"
+
+pip install --upgrade awscli -q
 
 #Update or clone
 if test -d bot
@@ -23,6 +25,7 @@ else
 	echo "Cloned bot"
 fi
 
+rm -rf AWS
 rm README.md
 rm LICENSE
 rm config/creds.template.py

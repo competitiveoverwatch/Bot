@@ -50,13 +50,13 @@ class SidebarThread(BotThread):
             new_sidebar = sidebar_template.replace(const.sidebar_replacement_megathreads, megathreads_str)
             new_sidebar = new_sidebar.replace(const.sidebar_replacement_events, events_str)
 
-            print(new_sidebar)
+            #print(new_sidebar)
 
             self.subreddit.mod.update(description = new_sidebar, key_color = const.key_color, spoilers_enabled = const.spoilers_enabled)
 
             print("SIDEBAR: Successfully updated")
 
-        print("SIDEBAR: Completed update")
+        print(f"SIDEBAR: Completed update. Next update in {sidebar_repeat_seconds} seconds")
 
 class ModerationThread(BotThread):
 
