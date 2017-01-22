@@ -13,3 +13,13 @@ sed -i 's/scripts-user$/\[scripts-user, always\]/' /etc/cloud/cloud.cfg
 echo "Set to execute user-data at instance boot"
 
 cd /home/ubuntu
+
+aws s3 cp s3://r-competitiveoverwatch/instance-init.sh . --region us-east-1
+echo "Downloaded instance-init.sh"
+
+chmod +x instance-init.sh
+
+echo "Executing instance-init.sh"
+. instance-init.sh
+
+shred -u instance-init.sh

@@ -6,7 +6,7 @@ if ! test -f get-pip.py
 then
 	wget https://bootstrap.pypa.io/get-pip.py
 	python3.6 get-pip.py
-	shred -u get-pip.py
+	rm get-pip.py
 fi
 
 echo "Installed dependencies, updated and upgraded"
@@ -23,10 +23,19 @@ else
 	echo "Cloned bot"
 fi
 
+rm README.md
+rm LICENSE
+rm config/creds.template.py
+
+#Download creds
+cd config
+aws s3 cp s3://r-competitiveoverwatch/creds.py . --region us-east-1
+echo "Downloaded creds.py"
+
 #Go back to bot directory
 cd ../
 
 python3.6 -m pip install -U -r requirements.txt
 echo "Installed Python dependencies"
 
-python3.6 run.py
+python3.6 bot.py
