@@ -21,4 +21,4 @@ cd ../
 pip install -U -r requirements.txt
 echo "Installed Python dependencies"
 
-screen -S bot python3.6 bot.py
+python3.6 bot.py
