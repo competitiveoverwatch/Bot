@@ -6,10 +6,6 @@ fi
 
 echo "Installed pip, updated and upgraded"
 
-rm README.md
-rm LICENSE
-rm config/creds.template.py
-
 #Download creds
 cd config
 aws s3 cp s3://r-competitiveoverwatch/creds.py . --region us-east-1
