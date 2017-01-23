@@ -3,13 +3,13 @@ from modules import ScheduledThread
 
 def get_formatted_latest(subreddit):
     titles = ["LFG: Find Players & Teams", "Advice: Questions & VOD Reviews", "Discussion Megathread", "Balance & Meta Megathread"]
-    keywords = ["lfg", "advice", "discussion", "balance"]
+    keywords = ["lfg", "advice", "daily discussion", "balance"]
 
     searchQuery = "flair:'megathread' author:'automoderator'"
 
     megathreads = ""
 
-    for thread in subreddit.search(searchQuery, sort = "new", syntax = "cloudsearch", time_filter = "month", limit = 4):
+    for thread in subreddit.search(searchQuery, sort = "new", syntax = "cloudsearch", time_filter = "month", limit = 7):
         title = thread.title.lower()
 
         for index, keyword in enumerate(keywords):
