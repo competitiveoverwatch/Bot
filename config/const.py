@@ -24,7 +24,7 @@ format_event_live = "**LIVE:** "
 format_event_prizepool = "\n\n${:,} Prize Pool"
 
 # Event dates
-format_event_date_line = "**{} – {}**"
+format_event_date_line = "[**{} – {}**]({})"
 
 format_event_date_tba = "Dates TBA"
 format_event_date_started = "Ongoing"

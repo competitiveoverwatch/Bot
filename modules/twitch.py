@@ -10,31 +10,32 @@ class Twitch():
         "User-Agent": const.user_agent
     }
 
-    @classmethod
-    def __get(cls, path, *params):
+    def __init__(self, logger):
+        self.logger = logger
+
+    def __get(self, path, *params):
 
         data = None
 
-        url = Twitch.__api_base.format(path)
+        url = self.__api_base.format(path)
 
         try:
             if len(params) != 1 or params[0] == None:
-                data = requests.get(url, headers = Twitch.__headers)
+                data = requests.get(url, headers = self.__headers)
             else:
-                data = requests.get(url, params = params[0], headers = Twitch.__headers)
+                data = requests.get(url, params = params[0], headers = self.__headers)
 
             data.raise_for_status()
             data = data.json()
             return data
 
         except (HTTPError, ValueError) as e:
-            print(e)
+            self.logger.exception(e)
             return None
 
-    @classmethod
-    def __get_id(cls, channel_name):
+    def __get_id(self, channel_name):
 
-        data = Twitch.__get("search/channels", {
+        data = self.__get("search/channels", {
             "query": channel_name,
             "limit": "1"
         })
@@ -42,7 +43,7 @@ class Twitch():
         if data is not None:
             channels = data["channels"]
             if len(channels) == 0:
-                print(f"Failed to get id for {channel_name}")
+                self.logger.error(f"Failed to get id for {channel_name}")
                 return None
 
             else:
@@ -51,16 +52,15 @@ class Twitch():
 
         else:
             return data # (None)
-        
-    @classmethod
-    def is_channel_live(cls, channel_name):
 
-        channel_id = Twitch.__get_id(channel_name)
+    def is_channel_live(self, channel_name):
+
+        channel_id = self.__get_id(channel_name)
         if channel_id is None:
             return False
 
         else:
             path = "streams/" + str(channel_id)
-            data = Twitch.__get(path)
+            data = self.__get(path)
 
             return (data["stream"] != None)

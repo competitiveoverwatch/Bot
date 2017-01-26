@@ -5,135 +5,146 @@ import requests
 from modules.twitch import Twitch
 from urllib.parse import urlparse
 
-def __get_events_json():
-    query = "|".join([
-        "[[Category:Tournaments]]",
-        "[[Is tier::Premier||Major]]",
-        "[[Has_end_date::>]]",
-        "?Has_name",
-        "?Has_tournament_twitch",
-        "?Has_start_date",
-        "?Has_end_date",
-        "?Has_prize_pool",
-        "offset=0",
-        "limit=6",
-        "sort=Has_start_date",
-        "order=asc"
-    ])
+class Events:
 
-    payload = {
-        "action": "ask",
-        "query": query,
-        "format": "json"
-    }
+    def __init__(self, logger):
+        self.logger = logger
+        self.twitch = Twitch(self.logger)
 
-    headers = {
-        "User-Agent": const.user_agent
-    }
+    def __get_events_json(self):
+        query = "|".join([
+            "[[Category:Tournaments]]",
+            "[[Is tier::Premier||Major]]",
+            "[[Has_end_date::>]]",
+            "?Has_name",
+            "?Has_tournament_twitch",
+            "?Has_start_date",
+            "?Has_end_date",
+            "?Has_prize_pool",
+            "offset=0",
+            "limit=6",
+            "sort=Has_start_date",
+            "order=asc"
+        ])
 
-    url = "http://wiki.teamliquid.net/overwatch/api.php"
+        payload = {
+            "action": "ask",
+            "query": query,
+            "format": "json"
+        }
 
-    try:
-        data = requests.get(url, params = payload, headers = headers)
-        data.raise_for_status()
-        data = data.json()
-        return data
+        headers = {
+            "User-Agent": const.user_agent
+        }
 
-    except (HTTPError, ValueError) as e:
-        print(e)
-        return None
+        url = "http://wiki.teamliquid.net/overwatch/api.php"
 
-def __get_live_badge(twitch_url):
-    channel_name = urlparse(twitch_url).path
+        try:
+            data = requests.get(url, params = payload, headers = headers)
+            data.raise_for_status()
+            data = data.json()
+            return data
 
-    if len(channel_name) > 1:
-        channel_name = channel_name[1:] # Remove preceding slash
+        except (HTTPError, ValueError) as e:
+            self.logger.exception(e)
+            return None
 
-        if Twitch.is_channel_live(channel_name):
-            return const.format_event_live
+    def __get_live_badge(self, twitch_url):
+        channel_name = urlparse(twitch_url).path
 
-    return ""
+        if len(channel_name) > 1:
+            channel_name = channel_name[1:] # Remove preceding slash
 
-def __format_event_dates(has_start_date, has_end_date):
-    start_timestamp = float(has_start_date)
-    end_timestamp = float(has_end_date)
+            if self.twitch.is_channel_live(channel_name):
+                return const.format_event_live
 
-    # Convert to datetime
-    start = datetime.datetime.fromtimestamp(start_timestamp)
-    end = datetime.datetime.fromtimestamp(end_timestamp)
+        return ""
 
-    now = datetime.datetime.utcnow()
+    def __format_event_dates(self, has_start_date, has_end_date, liquipedia_url):
+        start_timestamp = float(has_start_date)
+        end_timestamp = float(has_end_date)
 
-    # If start == end, event may have been rescheduled/something else happened
-    # e.g. this happened with Masters Gaming Arena 2016
-    if start_timestamp == end_timestamp:
-        return const.format_event_date_tba
+        # Convert to datetime
+        start = datetime.datetime.fromtimestamp(start_timestamp)
+        end = datetime.datetime.fromtimestamp(end_timestamp)
 
-    else:
-        formatted_start = None
-        if start <= now:
-            formatted_start = const.format_event_date_started
+        now = datetime.datetime.utcnow()
+
+        # If start == end, event may have been rescheduled/something else happened
+        # e.g. this happened with Masters Gaming Arena 2016
+        if start_timestamp == end_timestamp:
+            return const.format_event_date_tba
+
         else:
-            formatted_start = start.strftime(const.format_event_date)
+            formatted_start = None
+            if start <= now:
+                formatted_start = const.format_event_date_started
+            else:
+                formatted_start = start.strftime(const.format_event_date)
 
-        formatted_end = None
-        # Check `start > now` to avoid "Ongoing – 31" or similar nonsense
-        if (start.month == end.month) and start > now:
-            formatted_end = end.strftime(const.format_event_date_same_month)
+            formatted_end = None
+            # Check `start > now` to avoid "Ongoing – 31" or similar nonsense
+            if (start.month == end.month) and start > now:
+                formatted_end = end.strftime(const.format_event_date_same_month)
+            else:
+                formatted_end = end.strftime(const.format_event_date)
+
+            return const.format_event_date_line.format(formatted_start, formatted_end, liquipedia_url)
+
+    def get_formatted(self, sidebar_length):
+        data = self.__get_events_json()
+
+        if data is None:
+            return data
+
         else:
-            formatted_end = end.strftime(const.format_event_date)
+            results = data["query"]["results"]
 
-        return const.format_event_date_line.format(formatted_start, formatted_end)
+            events = ""
 
-def get_formatted(sidebar_length):
-    data = __get_events_json()
+            for event, details in results.items():
+                printouts = details["printouts"]
 
-    if data is None:
-        return data
+                name = printouts["Has name"][0]
+                liquipedia_url = details["fullurl"]
+                twitch_url = printouts["Has tournament twitch"]
 
-    else:
-        results = data["query"]["results"]
+                if len(twitch_url) == 1:
+                    twitch_url = twitch_url[0]
+                else:
+                    twitch_url = ""
 
-        events = ""
+                # Use Twitch URL for link (and check if live) if it exists
+                # otherwise use the Liquipedia URL
+                live_badge = ""
+                if twitch_url == "":
+                    twitch_url = liquipedia_url
+                else:
+                    live_badge = self.__get_live_badge(twitch_url)
 
-        for event, details in results.items():
-            printouts = details["printouts"]
+                # Format start and end dates
+                has_start_date = printouts["Has start date"][0]
+                has_end_date = printouts["Has end date"][0]
+                dates = self.__format_event_dates(has_start_date, has_end_date, liquipedia_url)
+                
+                # Format prize pool
+                prizepool = printouts["Has prize pool"]
+                prizepool = prizepool[0] if (len(prizepool) == 1) else 0
 
-            name = printouts["Has name"][0]
-            twitch_url = printouts["Has tournament twitch"][0]
+                formatted_prizepool = ""
+                if prizepool > 0:
+                    # Round prizepool to nearest 10, add commas
+                    prizepool = round(prizepool, -1)
+                    formatted_prizepool = const.format_event_prizepool.format(prizepool)
 
-            # Use Twitch URL for link (and check if live) if it exists
-            # otherwise use the Liquipedia URL
-            live_badge = ""
-            if twitch_url == "":
-                twitch_url = details["fullurl"]
+                # Piece everything together into an event
+                new_event = const.format_event.format(live_badge, name, twitch_url, formatted_prizepool, dates)
 
-            else:
-                live_badge = __get_live_badge(twitch_url)
+                if sidebar_length + len(events) + len(new_event) > const.sidebar_length_limit:
+                    break
 
-            # Format start and end dates
-            has_start_date = printouts["Has start date"][0]
-            has_end_date = printouts["Has end date"][0]
-            dates = __format_event_dates(has_start_date, has_end_date)
-            
-            # Format prize pool
-            prizepool = printouts["Has prize pool"]
-            prizepool = prizepool[0] if (len(prizepool) == 1) else 0
+                else:
+                    events += new_event
+                    sidebar_length += len(new_event)
 
-            formatted_prizepool = ""
-            if prizepool > 0:
-                # Round prizepool to nearest 10, add commas
-                prizepool = round(prizepool, -1)
-                formatted_prizepool = const.format_event_prizepool.format(prizepool)
-
-            # Piece everything together into an event
-            new_event = const.format_event.format(live_badge, name, twitch_url, formatted_prizepool, dates)
-
-            if sidebar_length + len(events) + len(new_event) > const.sidebar_length_limit:
-                break
-
-            else:
-                events += new_event
-                sidebar_length += len(new_event)
-
-        return events
+            return events

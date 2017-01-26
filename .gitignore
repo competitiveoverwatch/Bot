@@ -124,3 +124,4 @@ ENV/
 # Custom
 cache.sqlite
 creds.py
+logs/

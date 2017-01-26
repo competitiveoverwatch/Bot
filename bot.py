@@ -1,6 +1,8 @@
 from config import const, creds
 
-from modules import events, megathreads
+from modules.events import Events
+from modules.megathreads import Megathreads
+from modules.rules import Rules
 
 import requests
 import requests_cache
@@ -9,6 +11,20 @@ import praw
 
 from threading import Event, Thread
 import time
+
+import logging
+from logging.handlers import RotatingFileHandler
+
+import os, os.path
+if not os.path.exists("logs/"):
+    os.makedirs("logs/")
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = RotatingFileHandler("logs/bot.log", maxBytes=1024000, backupCount=5)
+formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 cache_seconds = 60 * 4.5 # Cache for 4.5 minutes
 sidebar_repeat_seconds = 60 * 5 # Update sidebar every 5 minutes
@@ -31,20 +47,25 @@ class BotThread(Thread):
 
 class SidebarThread(BotThread):
 
+    def __init__(self, subreddit, repeat_time):
+        super().__init__(subreddit, repeat_time)
+        self.events = Events(logger)
+        self.megathreads = Megathreads(self.subreddit)
+
     def main(self):
-        print("\nSIDEBAR: Beginning update")
+        logger.info("SIDEBAR: Beginning update")
 
         sidebar_template = self.subreddit.wiki["sidebar_template"].content_md
         sidebar_length = len(sidebar_template)
         
-        megathreads_str = megathreads.get_formatted_latest(self.subreddit)
-        events_str = events.get_formatted(sidebar_length)
+        megathreads_str = self.megathreads.get_formatted_latest()
+        events_str = self.events.get_formatted(sidebar_length)
 
         if megathreads_str is None:
-            print("SIDEBAR: Failed to fetch megathreads")
+            logger.error("SIDEBAR: Failed to fetch megathreads")
 
         elif events_str is None:
-            print("SIDEBAR: Failed to fetch events")
+            logger.error("SIDEBAR: Failed to fetch events")
 
         else:
             new_sidebar = sidebar_template.replace(const.sidebar_replacement_megathreads, megathreads_str)
@@ -54,14 +75,16 @@ class SidebarThread(BotThread):
 
             self.subreddit.mod.update(description = new_sidebar, key_color = const.key_color, spoilers_enabled = const.spoilers_enabled)
 
-            print("SIDEBAR: Successfully updated")
+            logger.info("SIDEBAR: Successfully updated")
 
-        print(f"SIDEBAR: Completed update. Next update in {sidebar_repeat_seconds} seconds")
+        logger.info(f"SIDEBAR: Completed update. Next update in {sidebar_repeat_seconds} seconds")
 
 class ModerationThread(BotThread):
 
     def main(self):
         pass
+        #for submission in self.subreddit.stream.submissions():
+            #Do something for each submission
 
 class MegathreadSchedulerThread(BotThread):
 
