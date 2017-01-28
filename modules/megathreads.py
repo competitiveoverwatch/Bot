@@ -7,8 +7,8 @@ class Megathreads:
         self.subreddit = subreddit
 
     def get_formatted_latest(self):
-        titles = ["LFG: Find Players & Teams", "Advice: Questions & VOD Reviews", "Discussion Megathread", "Balance & Meta Megathread"]
-        keywords = ["lfg", "advice", "daily discussion", "balance"]
+        titles = ["LFG: Find Players & Teams", "Advice: Questions & VOD Reviews", "Discussion Megathread"]
+        keywords = ["lfg", "advice", "daily discussion"]
 
         searchQuery = "flair:'megathread' author:'automoderator'"
 
