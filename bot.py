@@ -2,6 +2,7 @@ from config import const, creds
 
 from modules.events import Events
 from modules.megathreads import Megathreads
+from modules.ScheduledThread import ScheduledThread
 from modules.rules import Rules
 
 import requests
@@ -89,7 +90,15 @@ class ModerationThread(BotThread):
 class MegathreadSchedulerThread(BotThread):
 
     def main(self):
-        pass
+        schedule = self.subreddit.wiki["automoderator-schedule"].content_md
+        raw_threads = schedule.split("---")[1:] # Ignore first
+
+        for raw_thread in raw_threads:
+            thread = ScheduledThread(raw_thread)
+            if thread.is_valid():
+                print(f"title: {thread.title}")
+
+        #a = ScheduledThread(schedule)
 
 def start_thread(class_name, subreddit, repeat_time):
     t = class_name(subreddit, repeat_time)
@@ -110,6 +119,7 @@ def main():
 
     #start_thread(ModerationThread, subreddit, )
     start_thread(SidebarThread, subreddit, sidebar_repeat_seconds)
+    #start_thread(MegathreadSchedulerThread, subreddit, 999)
 
     keep_alive_event = Event()
     keep_alive_event.wait()
