@@ -28,5 +28,5 @@ format_event_date_line = "[**{} – {}**]({})"
 
 format_event_date_tba = "Dates TBA"
 format_event_date_started = "Ongoing"
-format_event_date_same_month = "%d"
-format_event_date = "%B %d"
+format_event_date_same_month = "D"
+format_event_date = "MMMM D"

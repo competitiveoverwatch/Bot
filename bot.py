@@ -5,16 +5,16 @@ from modules.megathreads import Megathreads
 from modules.ScheduledThread import ScheduledThread
 from modules.rules import Rules
 
-import requests
-import requests_cache
-
-import praw
-
-from threading import Event, Thread
-import time
-
+import arrow
+from dateutil import tz
 import logging
 from logging.handlers import RotatingFileHandler
+import math
+import praw
+import requests
+import requests_cache
+from threading import Event, Thread
+import time
 
 import os, os.path
 if not os.path.exists("logs/"):
@@ -90,15 +90,45 @@ class ModerationThread(BotThread):
 class MegathreadSchedulerThread(BotThread):
 
     def main(self):
+        sec_per_hour = 60*60
+        sec_per_day = sec_per_hour * 24
+        sec_per_week = sec_per_day * 7
+
+        sec_time_tolerance = 4 * 60 # 4 minutes
+
         schedule = self.subreddit.wiki["automoderator-schedule"].content_md
         raw_threads = schedule.split("---")[1:] # Ignore first
 
+        now = arrow.utcnow().timestamp
+
         for raw_thread in raw_threads:
             thread = ScheduledThread(raw_thread)
-            if thread.is_valid():
-                print(f"title: {thread.title}")
 
-        #a = ScheduledThread(schedule)
+            if thread.is_valid():
+
+                first_timestamp = thread.first.timestamp
+                rounded_time_diff = None
+
+                if thread.repeat_timespan == "hour":
+                    rounded_time_diff = math.floor(((now - first_timestamp) / sec_per_hour) + 1) * sec_per_hour
+
+                elif thread.repeat_timespan == "day":
+                    rounded_time_diff = math.floor(((now - first_timestamp) / sec_per_day + 1)) * sec_per_day
+
+                elif thread.repeat_timespan == "week":
+                    rounded_time_diff = math.floor(((now - first_timestamp) / sec_per_week) + 1) * sec_per_week
+
+                next_post = first_timestamp + rounded_time_diff
+
+                if rounded_time_diff is not None and (next_post > now - sec_time_tolerance) and (next_post < now + sec_time_tolerance):
+                    logger.info(f"{thread.title} would be posted now")
+
+                    title = thread.title
+
+                    # Temporary until we switch from AutoMod to OmnicOverlord
+                    title = title.replace("%B %d", arrow.get(now).format("MMMM D"))
+
+                    #self.subreddit.submit(title, selftext=thread.text, send_replies=False)
 
 def start_thread(class_name, subreddit, repeat_time):
     t = class_name(subreddit, repeat_time)
@@ -119,7 +149,7 @@ def main():
 
     #start_thread(ModerationThread, subreddit, )
     start_thread(SidebarThread, subreddit, sidebar_repeat_seconds)
-    #start_thread(MegathreadSchedulerThread, subreddit, 999)
+    start_thread(MegathreadSchedulerThread, subreddit, megathread_repeat_seconds)
 
     keep_alive_event = Event()
     keep_alive_event.wait()

@@ -1,3 +1,4 @@
+import arrow
 from itertools import islice
 
 class ScheduledThread():
@@ -29,11 +30,8 @@ class ScheduledThread():
 
                 value = value.strip()
 
-                #print(f"key: {key} | value: {value}")
-
                 if key == "first":
-                    #print(value)
-                    self.first = ""
+                    self.first = arrow.get(value)
 
                 elif key == "repeat":
                     repeat_components = value.split(" ")

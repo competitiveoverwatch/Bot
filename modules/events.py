@@ -1,6 +1,6 @@
 from config import const
 
-import datetime
+import arrow
 import requests
 from modules.twitch import Twitch
 from urllib.parse import urlparse
@@ -61,18 +61,15 @@ class Events:
         return ""
 
     def __format_event_dates(self, has_start_date, has_end_date, liquipedia_url):
-        start_timestamp = float(has_start_date)
-        end_timestamp = float(has_end_date)
-
         # Convert to datetime
-        start = datetime.datetime.fromtimestamp(start_timestamp)
-        end = datetime.datetime.fromtimestamp(end_timestamp)
+        start = arrow.get(has_start_date)
+        end = arrow.get(has_end_date)
 
-        now = datetime.datetime.utcnow()
+        now = arrow.utcnow()
 
         # If start == end, event may have been rescheduled/something else happened
         # e.g. this happened with Masters Gaming Arena 2016
-        if start_timestamp == end_timestamp:
+        if start == end:
             return const.format_event_date_tba
 
         else:
@@ -80,14 +77,14 @@ class Events:
             if start <= now:
                 formatted_start = const.format_event_date_started
             else:
-                formatted_start = start.strftime(const.format_event_date)
+                formatted_start = start.format(const.format_event_date)
 
             formatted_end = None
             # Check `start > now` to avoid "Ongoing – 31" or similar nonsense
             if (start.month == end.month) and start > now:
-                formatted_end = end.strftime(const.format_event_date_same_month)
+                formatted_end = end.format(const.format_event_date_same_month)
             else:
-                formatted_end = end.strftime(const.format_event_date)
+                formatted_end = end.format(const.format_event_date)
 
             return const.format_event_date_line.format(formatted_start, formatted_end, liquipedia_url)
 
