@@ -63,4 +63,11 @@ class Twitch():
             path = "streams/" + str(channel_id)
             data = self.__get(path)
 
-            return (data["stream"] != None)
+            stream = data["stream"]
+            if stream is not None:
+                status = data["stream"]["channel"]["status"]
+
+                return (status is not None and "RERUN:" not in status)
+
+            else:
+                return False

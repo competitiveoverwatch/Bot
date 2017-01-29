@@ -86,7 +86,7 @@ class Events:
             else:
                 formatted_end = end.format(const.format_event_date)
 
-            return const.format_event_date_line.format(formatted_start, formatted_end, liquipedia_url)
+            return (const.format_event_date_line.format(formatted_start, formatted_end, liquipedia_url), end < now)
 
     def get_formatted(self, sidebar_length):
         data = self.__get_events_json()
@@ -111,18 +111,18 @@ class Events:
                 else:
                     twitch_url = ""
 
+                # Format start and end dates
+                has_start_date = printouts["Has start date"][0]
+                has_end_date = printouts["Has end date"][0]
+                dates, has_ended = self.__format_event_dates(has_start_date, has_end_date, liquipedia_url)
+
                 # Use Twitch URL for link (and check if live) if it exists
                 # otherwise use the Liquipedia URL
                 live_badge = ""
                 if twitch_url == "":
                     twitch_url = liquipedia_url
-                else:
+                elif not has_ended:
                     live_badge = self.__get_live_badge(twitch_url)
-
-                # Format start and end dates
-                has_start_date = printouts["Has start date"][0]
-                has_end_date = printouts["Has end date"][0]
-                dates = self.__format_event_dates(has_start_date, has_end_date, liquipedia_url)
                 
                 # Format prize pool
                 prizepool = printouts["Has prize pool"]

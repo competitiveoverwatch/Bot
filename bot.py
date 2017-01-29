@@ -94,7 +94,7 @@ class MegathreadSchedulerThread(BotThread):
         sec_per_day = sec_per_hour * 24
         sec_per_week = sec_per_day * 7
 
-        sec_time_tolerance = 4 * 60 # 4 minutes
+        sec_time_tolerance = 5 * 60 # 5 minutes
 
         schedule = self.subreddit.wiki["automoderator-schedule"].content_md
         raw_threads = schedule.split("---")[1:] # Ignore first
