@@ -1,6 +1,6 @@
 subreddit = "competitiveoverwatch"
 key_color = "#545452" # Reddit's "dark grey"
-spoilers_enabled = False
+spoilers_enabled = True
 
 user_agent = "r/" + subreddit + " sidebar updater. (Contact us via r/" + subreddit + " modmail)"
 
