@@ -94,7 +94,7 @@ class MegathreadSchedulerThread(BotThread):
         sec_per_day = sec_per_hour * 24
         sec_per_week = sec_per_day * 7
 
-        sec_time_tolerance = 5 * 60 # 5 minutes
+        sec_time_tolerance = 20 * 60 # 20 minutes
 
         schedule = self.subreddit.wiki["automoderator-schedule"].content_md
         raw_threads = schedule.split("---")[1:] # Ignore first
@@ -128,7 +128,7 @@ class MegathreadSchedulerThread(BotThread):
                     # Temporary until we switch from AutoMod to OmnicOverlord
                     title = title.replace("%B %d", arrow.get(now).format("MMMM D"))
 
-                    #self.subreddit.submit(title, selftext=thread.text, send_replies=False)
+                    self.subreddit.submit(title, selftext=thread.text, send_replies=False)
 
 def start_thread(class_name, subreddit, repeat_time):
     t = class_name(subreddit, repeat_time)
@@ -149,7 +149,11 @@ def main():
 
     #start_thread(ModerationThread, subreddit, )
     start_thread(SidebarThread, subreddit, sidebar_repeat_seconds)
-    start_thread(MegathreadSchedulerThread, subreddit, megathread_repeat_seconds)
+    #start_thread(MegathreadSchedulerThread, subreddit, megathread_repeat_seconds)
+
+    test_megathread_scheduler = MegathreadSchedulerThread(reddit.subreddit("co_test"), megathread_repeat_seconds)
+    test_megathread_scheduler.daemon = True
+    test_megathread_scheduler.start()
 
     keep_alive_event = Event()
     keep_alive_event.wait()
