@@ -89,6 +89,10 @@ class ModerationThread(BotThread):
 
 class MegathreadSchedulerThread(BotThread):
 
+    def __init__(self, subreddit, repeat_time):
+        super().__init__(subreddit, repeat_time)
+        self.megathreads = Megathreads(self.subreddit)
+
     def main(self):
         sec_per_hour = 60*60
         sec_per_day = sec_per_hour * 24
@@ -122,13 +126,7 @@ class MegathreadSchedulerThread(BotThread):
 
                 if rounded_time_diff is not None and (next_post > now - sec_time_tolerance) and (next_post < now + sec_time_tolerance):
                     logger.info(f"{thread.title} would be posted now")
-
-                    title = thread.title
-
-                    # Temporary until we switch from AutoMod to OmnicOverlord
-                    title = title.replace("%B %d", arrow.get(now).format("MMMM D"))
-
-                    self.subreddit.submit(title, selftext=thread.text, send_replies=False)
+                    self.megathreads.post(thread, now)
 
 def start_thread(class_name, subreddit, repeat_time):
     t = class_name(subreddit, repeat_time)
@@ -151,6 +149,7 @@ def main():
     start_thread(SidebarThread, subreddit, sidebar_repeat_seconds)
     #start_thread(MegathreadSchedulerThread, subreddit, megathread_repeat_seconds)
 
+    #For now, post scheduled megathreads to r/co_test instead of main sub
     test_megathread_scheduler = MegathreadSchedulerThread(reddit.subreddit("co_test"), megathread_repeat_seconds)
     test_megathread_scheduler.daemon = True
     test_megathread_scheduler.start()

@@ -49,16 +49,15 @@ class ScheduledThread():
                     self.sticky = (value == "true")
 
                 elif key == "title":
-                    self.title = value
+                    self.title = value[1:-1] #Remove quotes (first/last characters)
             else:
                 text_start_index = index
                 break
 
         if text_start_index is not None:
-            text = ""
 
             for line in islice(lines, text_start_index+1, None):
-                text += f"\n{line.strip()}\n"
+                self.text += f"\n{line.strip()}\n"
 
     def is_valid(self):
         return not any(var is None for var in [self.title, self.repeat_multiple, self.repeat_timespan, self.first])

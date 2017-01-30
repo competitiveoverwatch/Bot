@@ -1,5 +1,6 @@
+import arrow
 from config import const
-from modules import ScheduledThread
+from modules.ScheduledThread import ScheduledThread
 
 class Megathreads:
 
@@ -29,17 +30,26 @@ class Megathreads:
 
         return megathreads
 
-    def post(self, scheduled_thread):
+    def post(self, scheduled_thread, now_timestamp):
         if isinstance(scheduled_thread, ScheduledThread):
 
             if scheduled_thread.is_valid():
-                submission = self/subreddit.submit(scheduled_thread.title, selftext = scheduled_thread.text, send_replies = False)
 
-                # TODO: Test how flair choices work
-                # choices = submission.flair.choices()
-                # template_id = next(x for x in choices
-                #                    if x['flair_text_editable'])['flair_template_id']
-                # submission.flair.select(template_id)
+                title = scheduled_thread.title
+
+                # Temporary until we switch from AutoMod to OmnicOverlord
+                title = title.replace("{{date %B %d}}", arrow.get(now_timestamp).format("MMMM D"))
+
+                submission = self.subreddit.submit(title, selftext = scheduled_thread.text, send_replies = False)
+
+                choices = submission.flair.choices()
+                template_id = next(x for x in choices
+                    if x["flair_css_class"] == "Megathread")["flair_template_id"]
+                submission.flair.select(template_id)
+
+                submission.mod.approve()
+                submission.mod.suggested_sort(sort = "new")
+                submission.mod.distinguish(how = "yes")
 
             else:
                 raise ValueError("Invalid schedule thread")
