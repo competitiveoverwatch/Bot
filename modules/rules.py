@@ -1,6 +1,7 @@
 import praw
 
-__blacklist = ["MRW ","MFW ","[rant]","retard","cunt","kys","kill yourself","why the hell","why are you able to","sick and tired","fuck","console fags","you retarded","you're a fucking","nigger","suck dick","autism","fag","fuck that country"]
+__blacklist = ["MRW ","MFW ","[rant]","retard","cunt","kys","kill yourself","why the hell","why are you able to","sick and tired",
+"fuck","console fags","you retarded","you're a fucking","nigger","suck dick","autism","fag","fuck that country"]
 
 class Rule():
     def __init__(self, number, name, description):
@@ -22,7 +23,7 @@ class SilentRule(Rule):
         super().__init__(0, None, None)
 
     def valid_post(self, post):
-        return (post.author.comment_karma > -90 and not "elo hell" in post.title)
+        return (post.author.comment_karma > -90 and not "elo hell" in post.title.lower())
 
     def valid_comment(self, comment):
         return (comment.author.comment_karma > -90)
@@ -82,6 +83,26 @@ Post smaller questions in the Weekly Discussion Megathread (right side of the he
             return False
 
         return True
+
+class LFGRule(Rule):
+    def __init__(self):
+        super().__init__(0, None, """LFG/LFT and related posts are not allowed as individual text posts on the subreddit.
+
+            To prevent the subreddit from being spammed with posts of players looking for teams or teammates, the subreddit runs a **weekly thread (the LFG Megathread)** which can be found in the top-right of the banner. Please direct posts to that thread, or try /r/OverwatchLFT or other websites. Thanks!""")
+            self.comments = False
+
+    def valid_post(self, post):
+        return ["need teammates for","LFG","LFT","LFM","recruit","start a team","[NA][PC]","[EU][PC]","[NA][PS4]","[EU][PS4]",
+        "[PC][EU]","[PC][NA]","looking for team","looking for a team","looking for a competitive team","looking for a competitive team",
+        "looking for people to play"] in post.title.lower()
+
+class BugRule(Rule):
+    def __init__(self):
+        super().__init__(5, "Bugs, Meta & Balance Topics", "Blizzard keeps a list of known issues stickied at the top of their forums. Post bug reports [on their forums](http://us.battle.net/forums/en/overwatch/22813881/), where they have previously commented on discussions and are better able to take action.")
+        self.comments = False
+
+    def valid_post(self, post):
+        return ["issue with matchmaking", "bug", "wouldn't let me join", "server error"] in post.title.lower()
 
 class Rules:
 
