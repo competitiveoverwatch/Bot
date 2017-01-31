@@ -73,7 +73,7 @@ Post smaller questions in the Weekly Discussion Megathread (right side of the he
 
     def valid_comment(self, comment):
 
-        if comment.is_root and len(comment.body) < 5
+        if comment.is_root and len(comment.body) < 5:
             # Allow short replies to top-level comments,
             # but not top-level comments themselves
             return False
@@ -89,7 +89,7 @@ class LFGRule(Rule):
         super().__init__(0, None, """LFG/LFT and related posts are not allowed as individual text posts on the subreddit.
 
             To prevent the subreddit from being spammed with posts of players looking for teams or teammates, the subreddit runs a **weekly thread (the LFG Megathread)** which can be found in the top-right of the banner. Please direct posts to that thread, or try /r/OverwatchLFT or other websites. Thanks!""")
-            self.comments = False
+        self.comments = False
 
     def valid_post(self, post):
         return ["need teammates for","LFG","LFT","LFM","recruit","start a team","[NA][PC]","[EU][PC]","[NA][PS4]","[EU][PS4]",
@@ -106,7 +106,7 @@ class BugRule(Rule):
 
 class Rules:
 
-    __post_rules = [SilentRule(), BehaviorRule(), OffTopicLowEffortRule()]
+    __post_rules = [LFGRule(), SilentRule(), BehaviorRule(), OffTopicLowEffortRule()]
     __comment_rules = [SilentRule(), BehaviorRule()]
 
     @classmethod
