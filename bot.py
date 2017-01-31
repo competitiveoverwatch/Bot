@@ -93,12 +93,11 @@ class ModerationThread(BotThread):
         valid, rule = Rules.validate_post(post)
         if not valid:
 
-            comment_text = "Thank you for your submission to /r/CompetitiveOverwatch! Unfortunately, it was removed for the following reason:\n"
+            comment_text = f"\n{const.mod_removal_prefix}"
             for line in rule.description.split("\n"):
                 comment_text += f"\n> {line.strip()}"
 
-            comment_text += "\n\nPlease [message the moderators](https://www.reddit.com/message/compose?to=%2Fr%2FCompetitiveoverwatch)\
-             if you have any questions."
+            comment_text += f"\n\n{const.mod_removal_suffix}"
             logger.debug(f"MODERATOR: Removed '{post.title}' for: {rule.name}")
 
             try:
@@ -195,7 +194,6 @@ def main():
 
     subreddit = reddit.subreddit(const.subreddit)
 
-    #start_thread(ModerationThread, subreddit, )
     start_thread(SidebarThread, subreddit, sidebar_repeat_seconds)
 
     test_subreddit = reddit.subreddit("co_test")

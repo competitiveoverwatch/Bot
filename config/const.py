@@ -8,6 +8,10 @@ user_agent = "r/" + subreddit + " sidebar updater. (Contact us via r/" + subredd
 # https://www.reddit.com/r/changelog/comments/4x91ql/reddit_change_updates_to_the_sidebar/
 sidebar_length_limit = 10_240
 
+### Moderation
+mod_removal_prefix = "Thank you for your submission to /r/CompetitiveOverwatch! Unfortunately, it was removed for the following reason:"
+mod_removal_suffix = f"Please [message the moderators](https://www.reddit.com/message/compose?to=%2Fr%2F{subreddit}) if you have any questions."
+
 ### Sidebar formatting
 
 ## Megathread
