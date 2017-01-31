@@ -93,7 +93,7 @@ class ModerationThread(BotThread):
         valid, rule = Rules.validate_post(post)
         if not valid:
 
-            comment_text = f"\n{const.mod_removal_prefix}"
+            comment_text = f"\n{const.mod_removal_prefix}\n"
             for line in rule.description.split("\n"):
                 comment_text += f"\n> {line.strip()}"
 
