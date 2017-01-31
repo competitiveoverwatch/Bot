@@ -3,7 +3,7 @@ from config import const, creds
 from modules.events import Events
 from modules.megathreads import Megathreads
 from modules.ScheduledThread import ScheduledThread
-from modules.rules import Rules
+from modules.rules import Rule, Rules
 
 import arrow
 from dateutil import tz
@@ -11,6 +11,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import math
 import praw
+from praw.exceptions import APIException
 import requests
 import requests_cache
 from threading import Event, Thread
@@ -21,7 +22,7 @@ if not os.path.exists("logs/"):
     os.makedirs("logs/")
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 handler = RotatingFileHandler("logs/bot.log", maxBytes=1024000, backupCount=5)
 formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
 handler.setFormatter(formatter)
@@ -38,9 +39,15 @@ class BotThread(Thread):
         self.repeat_time = repeat_time
 
     def run(self):
-        while True:
+
+        if self.repeat_time > 0:
+
+            while True:
+                self.main()
+                time.sleep(self.repeat_time)
+
+        else:
             self.main()
-            time.sleep(self.repeat_time)
 
     # Subclasses override
     def main(self):
@@ -82,10 +89,53 @@ class SidebarThread(BotThread):
 
 class ModerationThread(BotThread):
 
+    def __moderate_post(self, post):
+        valid, rule = Rules.validate_post(post)
+        if not valid:
+
+            comment_text = "Thank you for your submission to /r/CompetitiveOverwatch! Unfortunately, it was removed for the following reason:\n"
+            for line in rule.description.split("\n"):
+                comment_text += f"\n> {line.strip()}"
+
+            comment_text += "\n\nPlease [message the moderators](https://www.reddit.com/message/compose?to=%2Fr%2FCompetitiveoverwatch)\
+             if you have any questions."
+            logger.debug(f"MODERATOR: Removed '{post.title}' for: {rule.name}")
+
+            try:
+                comment = post.reply(comment_text)
+                # If we fail to reply (e.g. post is archived etc.)
+                # don't perform other actions either
+
+                comment.mod.distinguish(how = "yes", sticky = True)
+
+                post.mod.remove()
+                post.mod.flair() # Remove flair
+
+            except APIException as e:
+                # E.g. 'TOO_OLD'
+                logger.exception(e)
+
+    def __moderate_comment(self, comment, post):
+        valid, rule = Rules.validate_comment(comment)
+        if not valid:
+
+            if comment.parent_id == comment.link_id:
+                logger.debug(f"MODERATOR: Removed root comment on '{post.title}' for: {rule.name}")
+            else:
+                logger.debug(f"MODERATOR: Removed comment reply on '{post.title}' for: {rule.name}")
+            
+            comment.mod.remove()
+
     def main(self):
-        pass
-        #for submission in self.subreddit.stream.submissions():
-            #Do something for each submission
+        for post in self.subreddit.stream.submissions():
+            self.__moderate_post(post)
+
+            post.comments.replace_more(limit=0)
+            for comment in post.comments.list():
+
+                # If a comment has been removed, banned_by = username of mod that removed
+                if comment.banned_by is None:
+                    self.__moderate_comment(comment, post)
 
 class MegathreadSchedulerThread(BotThread):
 
@@ -147,12 +197,10 @@ def main():
 
     #start_thread(ModerationThread, subreddit, )
     start_thread(SidebarThread, subreddit, sidebar_repeat_seconds)
-    #start_thread(MegathreadSchedulerThread, subreddit, megathread_repeat_seconds)
 
-    #For now, post scheduled megathreads to r/co_test instead of main sub
-    test_megathread_scheduler = MegathreadSchedulerThread(reddit.subreddit("co_test"), megathread_repeat_seconds)
-    test_megathread_scheduler.daemon = True
-    test_megathread_scheduler.start()
+    test_subreddit = reddit.subreddit("co_test")
+    start_thread(MegathreadSchedulerThread, test_subreddit, megathread_repeat_seconds)
+    #start_thread(ModerationThread, test_subreddit, 0)
 
     keep_alive_event = Event()
     keep_alive_event.wait()

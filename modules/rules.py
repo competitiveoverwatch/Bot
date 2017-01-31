@@ -1,6 +1,6 @@
 import praw
 
-__blacklist = ["MRW ","MFW ","[rant]","retard","cunt","kys","kill yourself","why the hell","why are you able to","sick and tired",
+blacklist = ["MRW ","MFW ","[rant]","retard","cunt","kys","kill yourself","why the hell","why are you able to","sick and tired",
 "fuck","console fags","you retarded","you're a fucking","nigger","suck dick","autism","fag","fuck that country"]
 
 class Rule():
@@ -42,7 +42,14 @@ If you see doxing, [message the mod team](https://www.reddit.com/message/compose
     def valid_post(self, post):
         title = post.title.lower()
 
-        if  __blacklist in title:
+        if any(phrase in title for phrase in blacklist):
+            return False
+
+        return True
+
+    def valid_comment(self, comment):
+
+        if any(phrase in comment.body for phrase in blacklist):
             return False
 
         return True
@@ -66,20 +73,24 @@ Post smaller questions in the Weekly Discussion Megathread (right side of the he
         if len(title) < 5:
             return False
 
-        if len(post.selftext) < 12:
+        if len(post.selftext) < 12 and post.is_self:
             return False
 
         return True
 
     def valid_comment(self, comment):
 
-        if comment.is_root and len(comment.body) < 5:
+        tags = ["#check-yes","#check-no","#team-","#map-","#hero-"]
+
+        # Remove root comments under 5 characters in length.
+        # Leave root comments with image tags, because we don't know context (might be ok)
+        if comment.is_root and len(comment.body) < 5 and not any(tag in comment.body for tag in tags):
             # Allow short replies to top-level comments,
             # but not top-level comments themselves
             return False
 
 
-        if __blacklist in comment.body:
+        if any(phrase in comment.body for phrase in blacklist):
             return False
 
         return True
@@ -92,9 +103,9 @@ class LFGRule(Rule):
         self.comments = False
 
     def valid_post(self, post):
-        return ["need teammates for","LFG","LFT","LFM","recruit","start a team","[NA][PC]","[EU][PC]","[NA][PS4]","[EU][PS4]",
-        "[PC][EU]","[PC][NA]","looking for team","looking for a team","looking for a competitive team","looking for a competitive team",
-        "looking for people to play"] in post.title.lower()
+        return not any(phrase in post.title.lower() for phrase in ["need teammates for","LFG","LFT","LFM","recruit","start a team","[NA][PC]","[EU][PC]",
+            "[NA][PS4]","[EU][PS4]","[PC][EU]","[PC][NA]","looking for team","looking for a team","looking for a competitive team",
+            "looking for a competitive team","looking for people to play"])
 
 class BugRule(Rule):
     def __init__(self):
@@ -102,7 +113,7 @@ class BugRule(Rule):
         self.comments = False
 
     def valid_post(self, post):
-        return ["issue with matchmaking", "bug", "wouldn't let me join", "server error"] in post.title.lower()
+        return not any(phrase in post.title.lower() for phrase in ["issue with matchmaking", "bug", "wouldn't let me join", "server error"])
 
 class Rules:
 
@@ -110,19 +121,19 @@ class Rules:
     __comment_rules = [SilentRule(), BehaviorRule()]
 
     @classmethod
-    def validate_post(post):
+    def validate_post(cls, post):
 
-        for rule in self.__post_rules:
-            if rule.posts and not rule.valid_post(submission):
+        for rule in cls.__post_rules:
+            if rule.posts and not rule.valid_post(post):
                 return (False, rule)
 
         return (True, None)
 
     @classmethod
-    def validate_comment(comment):
+    def validate_comment(cls, comment):
 
-        for rule in self.__comment_rules:
-            if rule.comments and not rule.valid_comment(submission):
+        for rule in cls.__comment_rules:
+            if rule.comments and not rule.valid_comment(comment):
                 return (False, rule)
 
         return (True, None)
