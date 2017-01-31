@@ -43,7 +43,17 @@ class BotThread(Thread):
         if self.repeat_time > 0:
 
             while True:
-                self.main()
+                try:
+                    self.main()
+
+                except prawcore.exceptions.PRAWException as e:
+                    logger.exception(e)
+
+                    # If any Reddit error (e.g. down)
+                    # try again after 30 seconds
+                    time.sleep(30)
+                    self.main()
+
                 time.sleep(self.repeat_time)
 
         else:
@@ -85,7 +95,7 @@ class SidebarThread(BotThread):
 
             logger.info("SIDEBAR: Successfully updated")
 
-        logger.info(f"SIDEBAR: Completed update. Next update in {sidebar_repeat_seconds} seconds")
+        logger.info(f"SIDEBAR: Next update in {sidebar_repeat_seconds}s")
 
 class ModerationThread(BotThread):
 
@@ -100,19 +110,14 @@ class ModerationThread(BotThread):
             comment_text += f"\n\n{const.mod_removal_suffix}"
             logger.debug(f"MODERATOR: Removed '{post.title}' for: {rule.name}")
 
-            try:
-                comment = post.reply(comment_text)
-                # If we fail to reply (e.g. post is archived etc.)
-                # don't perform other actions either
+            comment = post.reply(comment_text)
+            # If we fail to reply (e.g. post is archived etc.)
+            # don't perform other actions either
 
-                comment.mod.distinguish(how = "yes", sticky = True)
+            comment.mod.distinguish(how = "yes", sticky = True)
 
-                post.mod.remove()
-                post.mod.flair() # Remove flair
-
-            except APIException as e:
-                # E.g. 'TOO_OLD'
-                logger.exception(e)
+            post.mod.remove()
+            post.mod.flair() # Remove flair
 
     def __moderate_comment(self, comment, post):
         valid, rule = Rules.validate_comment(comment)
@@ -199,7 +204,7 @@ def main():
     # Megathread scheduler + moderation run on test sub for now
     test_subreddit = reddit.subreddit("co_test")
     start_thread(MegathreadSchedulerThread, test_subreddit, megathread_repeat_seconds)
-    start_thread(ModerationThread, test_subreddit, 0) #Doesn't need to repeat - constantly streams
+    start_thread(ModerationThread, test_subreddit, 0) # Doesn't need to repeat - constantly streams
 
     keep_alive_event = Event()
     keep_alive_event.wait()
