@@ -196,9 +196,10 @@ def main():
 
     start_thread(SidebarThread, subreddit, sidebar_repeat_seconds)
 
+    # Megathread scheduler + moderation run on test sub for now
     test_subreddit = reddit.subreddit("co_test")
     start_thread(MegathreadSchedulerThread, test_subreddit, megathread_repeat_seconds)
-    #start_thread(ModerationThread, test_subreddit, 0)
+    start_thread(ModerationThread, test_subreddit, 0) #Doesn't need to repeat - constantly streams
 
     keep_alive_event = Event()
     keep_alive_event.wait()
