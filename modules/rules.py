@@ -3,6 +3,8 @@ import praw
 blacklist = ["MRW ","MFW ","[rant]","retard","cunt","kys","kill yourself","why the hell","why are you able to","sick and tired",
 "fuck","console fags","you retarded","you're a fucking","nigger","suck dick","autism","fag","fuck that country"]
 
+# TODO: Each rule should fetch its description from the subreddit's rules page
+
 class Rule():
     def __init__(self, number, name, description):
         self.number = number
