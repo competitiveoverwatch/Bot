@@ -78,7 +78,7 @@ class SidebarThread(BotThread):
         
         megathreads_str = self.megathreads.get_formatted_latest()
         events_str = self.events.get_formatted(sidebar_length)
-
+        
         if megathreads_str is None:
             logger.error("SIDEBAR: Failed to fetch megathreads")
 

@@ -3,6 +3,7 @@ from config import const
 import arrow
 import requests
 from modules.twitch import Twitch
+from operator import attrgetter
 from urllib.parse import urlparse
 
 class Event:
@@ -28,22 +29,18 @@ class Event:
         twitch_url = printouts["Has tournament twitch"]
         if len(twitch_url) == 1:
             self.twitch_url = twitch_url[0]
-
-        self.live_badge = self.__get_live_badge()
+            
+            channel_name = urlparse(self.twitch_url).path
+            if len(channel_name) > 1:
+                self.twitch_channel_name = channel_name[1:] # Remove preceding slash
 
         prizepool = printouts["Has prize pool"]
         self.prizepool = prizepool[0] if (len(prizepool) == 1) else 0
 
-    def __get_live_badge(self):
-        channel_name = urlparse(self.twitch_url).path
+        self.cached_live = self.is_live()
 
-        if not self.has_ended() and len(channel_name) > 1:
-            channel_name = channel_name[1:] # Remove preceding slash
-
-            if self.__twitch.is_channel_live(channel_name):
-                return const.format_event_live
-
-        return ""
+    def is_live(self):
+        return (not self.has_ended() and self.twitch_channel_name is not None and self.__twitch.is_channel_live(self.twitch_channel_name))
 
     def __format_dates(self):
         now = arrow.utcnow()
@@ -70,6 +67,10 @@ class Event:
             return const.format_event_date_line.format(formatted_start, formatted_end, self.liquipedia_url)
 
     def formatted(self):
+        live_badge = ""
+        if self.is_live():
+            live_badge = const.format_event_live
+
         url = self.liquipedia_url if (self.twitch_url is None) else self.twitch_url
 
         formatted_prizepool = ""
@@ -80,7 +81,7 @@ class Event:
 
         formatted_dates = self.__format_dates()
 
-        return const.format_event.format(self.live_badge, self.name, url, formatted_prizepool, formatted_dates)
+        return const.format_event.format(live_badge, self.name, url, formatted_prizepool, formatted_dates)
 
 class Events:
 
@@ -137,19 +138,28 @@ class Events:
         else:
             results = data["query"]["results"]
 
-            events = ""
+            sidebar_events = []
 
+            # Create `Event` for each JSON object
             for event_key, event_printouts_json in results.items():
+                new_event = Event(event_printouts_json, self.twitch)
+                sidebar_events.append(new_event)
 
-                event = Event(event_printouts_json, self.twitch)
+            # Sort live events first
+            sidebar_events.sort(key = attrgetter("cached_live"), reverse = True)
+
+            # Format actual sidebar text
+            sidebar_text = ""
+
+            for event in sidebar_events:
                 new_event_text = event.formatted()
                 new_event_text_len = len(new_event_text)
 
-                if sidebar_length + len(events) + new_event_text_len> const.sidebar_length_limit:
+                if (sidebar_length + len(sidebar_text) + new_event_text_len) > const.sidebar_length_limit:
                     break
 
                 else:
-                    events += new_event_text
+                    sidebar_text += new_event_text
                     sidebar_length += new_event_text_len
 
-            return events
+            return sidebar_text
