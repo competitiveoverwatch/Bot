@@ -1,7 +1,7 @@
 import arrow
 from itertools import islice
 
-class ScheduledThread():
+class ScheduledThread:
 
     def __init__(self, thread_definition):
         self.first = None

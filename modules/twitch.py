@@ -1,5 +1,13 @@
 from config import const, creds
 import requests
+from tinydb import TinyDB, Query
+from urllib.parse import urlparse
+
+import os, os.path
+if not os.path.exists("db/"):
+    os.makedirs("db/")
+
+db = TinyDB("db/twitch.json")
 
 class Twitch():
     __api_base = "https://api.twitch.tv/kraken/{}"
@@ -35,39 +43,57 @@ class Twitch():
 
     def __get_id(self, channel_name):
 
-        data = self.__get("search/channels", {
-            "query": channel_name,
-            "limit": "1"
-        })
-
-        if data is not None:
-            channels = data["channels"]
-            if len(channels) == 0:
-                self.logger.error(f"Failed to get id for {channel_name}")
-                return None
-
-            else:
-                id = channels[0]["_id"]
-                return id
+        Channel = Query()
+        results = db.search(Channel.name == channel_name)
+        if len(results) == 1:
+            return results[0]["id"]
 
         else:
-            return data # (None)
+            data = self.__get("search/channels", {
+                "query": channel_name,
+                "limit": "1"
+            })
 
-    def is_channel_live(self, channel_name):
+            if data is not None:
+                channels = data["channels"]
+                if len(channels) == 0:
+                    self.logger.error(f"Failed to get id for {channel_name}")
+                    return None
 
-        channel_id = self.__get_id(channel_name)
-        if channel_id is None:
-            return False
+                else:
+                    id = channels[0]["_id"]
 
-        else:
-            path = "streams/" + str(channel_id)
-            data = self.__get(path)
+                    db.insert({"name": channel_name, "id": id})
 
-            stream = data["stream"]
-            if stream is not None:
-                status = data["stream"]["channel"]["status"]
-
-                return (status is not None and "RERUN:" not in status)
+                    return id
 
             else:
-                return False
+                return data # (None)
+
+    def __get_channel_name(self, twitch_url):
+
+        channel_name = urlparse(twitch_url).path
+
+        if len(channel_name) > 1:
+            return channel_name[1:] # Remove preceding slash
+
+        return None
+
+    def is_channel_live(self, twitch_url):
+
+        channel_name = self.__get_channel_name(twitch_url)
+        if channel_name is not None:
+
+            channel_id = self.__get_id(channel_name)
+            if channel_id is not None:
+
+                path = "streams/" + str(channel_id)
+                data = self.__get(path)
+
+                stream = data["stream"]
+                if stream is not None:
+                    status = data["stream"]["channel"]["status"]
+
+                    return (status is not None and "RERUN:" not in status)
+
+        return False

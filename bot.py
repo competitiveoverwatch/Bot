@@ -16,6 +16,7 @@ import requests
 import requests_cache
 from threading import Event, Thread
 import time
+import tweepy
 
 import os, os.path
 if not os.path.exists("logs/"):
@@ -65,10 +66,11 @@ class BotThread(Thread):
 
 class SidebarThread(BotThread):
 
-    def __init__(self, subreddit, repeat_time):
+    def __init__(self, subreddit, repeat_time, twitter_api):
         super().__init__(subreddit, repeat_time)
+
         self.events = Events(logger)
-        self.megathreads = Megathreads(self.subreddit)
+        self.megathreads = Megathreads(self.subreddit, twitter_api)
 
     def main(self):
         logger.info("SIDEBAR: Beginning update")
@@ -146,7 +148,7 @@ class MegathreadSchedulerThread(BotThread):
 
     def __init__(self, subreddit, repeat_time):
         super().__init__(subreddit, repeat_time)
-        self.megathreads = Megathreads(self.subreddit)
+        self.megathreads = Megathreads(self.subreddit, None)
 
     def main(self):
         sec_per_hour = 60*60
@@ -183,6 +185,35 @@ class MegathreadSchedulerThread(BotThread):
                     logger.info(f"{thread.title} would be posted now")
                     self.megathreads.post(thread, now)
 
+def authorise_twitter():
+    auth = tweepy.OAuthHandler(creds.twitter_consumer_token, creds.twitter_consumer_secret)
+    auth.set_access_token(creds.twitter_access_token, creds.twitter_access_token_secret)
+
+    # At the moment, Twitter access tokens do not expire unless revoked.
+    # The bot runs on a subreddit-owned Twitter account only, so we should
+    # be fine to generate once, and stored permanently in `creds.py`.
+
+    '''
+    try:
+        redirect_url = auth.get_authorization_url()
+        print(f"Please visit {redirect_url} to authorise Twitter access.")
+
+    except tweepy.TweepError:
+        print("Error! Failed to get request token.")
+
+    verifier = input("Verification Code: ")
+
+    try:
+        access_token, access_token_secret = auth.get_access_token(verifier)
+        print(f"Access Token: {access_token}")
+        print(f"Access Token Secret: {access_token_secret}")
+
+    except tweepy.TweepError:
+        print("Error! Failed to get access token.")
+    '''
+
+    return auth
+
 def start_thread(class_name, subreddit, repeat_time):
     t = class_name(subreddit, repeat_time)
     t.daemon = True
@@ -190,17 +221,22 @@ def start_thread(class_name, subreddit, repeat_time):
 
 def main():
 
-    requests_cache.install_cache(expire_after = cache_seconds, old_data_on_error = True)
+    requests_cache.install_cache("db/requests_cache", expire_after = cache_seconds, old_data_on_error = True)
 
-    reddit = praw.Reddit(client_id = creds.client_id,
-                         client_secret = creds.client_secret,
-                         password = creds.password,
+    reddit = praw.Reddit(client_id = creds.reddit_client_id,
+                         client_secret = creds.reddit_client_secret,
+                         password = creds.reddit_password,
                          user_agent = const.user_agent,
-                         username = creds.username)
+                         username = creds.reddit_username)
 
     subreddit = reddit.subreddit(const.subreddit)
 
-    start_thread(SidebarThread, subreddit, sidebar_repeat_seconds)
+    auth = authorise_twitter()
+    twitter_api = tweepy.API(auth)
+
+    sidebar_thread = SidebarThread(subreddit, sidebar_repeat_seconds, twitter_api)
+    sidebar_thread.daemon = True
+    sidebar_thread.start()
 
     # Megathread scheduler + moderation run on test sub for now
     test_subreddit = reddit.subreddit("co_test")

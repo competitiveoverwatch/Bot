@@ -4,7 +4,6 @@ import arrow
 import requests
 from modules.twitch import Twitch
 from operator import attrgetter
-from urllib.parse import urlparse
 
 class Event:
 
@@ -29,10 +28,6 @@ class Event:
         twitch_url = printouts["Has tournament twitch"]
         if len(twitch_url) == 1:
             self.twitch_url = twitch_url[0]
-            
-            channel_name = urlparse(self.twitch_url).path
-            if len(channel_name) > 1:
-                self.twitch_channel_name = channel_name[1:] # Remove preceding slash
 
         prizepool = printouts["Has prize pool"]
         self.prizepool = prizepool[0] if (len(prizepool) == 1) else 0
@@ -40,7 +35,7 @@ class Event:
         self.cached_live = self.is_live()
 
     def is_live(self):
-        return (not self.has_ended() and self.twitch_channel_name is not None and self.__twitch.is_channel_live(self.twitch_channel_name))
+        return (not self.has_ended() and self.twitch_url is not None and self.__twitch.is_channel_live(self.twitch_url))
 
     def __format_dates(self):
         now = arrow.utcnow()

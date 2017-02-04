@@ -14,7 +14,25 @@ mod_removal_suffix = f"Please [message the moderators](https://www.reddit.com/me
 
 ### Sidebar formatting
 
-## Megathread
+## Megathreads
+megathreads = [
+    {
+        "keyword": "lfg",
+        "title": "LFG: Find Players & Teams",
+        "tweet": "Looking for people or teams to play with? Recruiting? Check out our weekly #Overwatch LFG megathread! {{URL}}"
+    },
+    {
+        "keyword": "advice",
+        "title": "Advice: Questions & VOD Reviews",
+        "tweet": "Got questions? Need gameplay reviewed? This week's Advice Megathread is the place: {{URL}} #Overwatch",
+    },
+    {
+        "keyword": "weekly discussion",
+        "title": "Discussion Megathread",
+        "tweet": "This week's Discussion Megathread: {{URL}} #Overwatch"
+    }
+]
+
 sidebar_replacement_megathreads = "{{MEGATHREADS}}"
 format_megathread = "> [{}]({})\n"
 
