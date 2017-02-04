@@ -46,7 +46,7 @@ class BotThread(Thread):
                 try:
                     self.main()
 
-                except prawcore.exceptions.PRAWException as e:
+                except praw.exceptions.PRAWException as e:
                     logger.exception(e)
 
                     # If any Reddit error (e.g. down)
@@ -113,6 +113,7 @@ class ModerationThread(BotThread):
             comment = post.reply(comment_text)
             # If we fail to reply (e.g. post is archived etc.)
             # don't perform other actions either
+            # (BotThread's `try: except:` will break here)
 
             comment.mod.distinguish(how = "yes", sticky = True)
 
