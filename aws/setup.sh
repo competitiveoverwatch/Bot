@@ -14,7 +14,7 @@ echo "Downloaded creds.py"
 #Go back to bot directory
 cd ../
 
-pip install -U -r requirements.txt
+pip install -Ur requirements.txt
 echo "Installed Python dependencies"
 
 echo "Starting bot"

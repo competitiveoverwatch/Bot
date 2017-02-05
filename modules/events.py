@@ -28,6 +28,8 @@ class Event:
         twitch_url = printouts["Has tournament twitch"]
         if len(twitch_url) == 1:
             self.twitch_url = twitch_url[0]
+        else:
+            self.twitch_url = None
 
         prizepool = printouts["Has prize pool"]
         self.prizepool = prizepool[0] if (len(prizepool) == 1) else 0
@@ -59,7 +61,7 @@ class Event:
             else:
                 formatted_end = self.end.format(const.format_event_date)
 
-            return const.format_event_date_line.format(formatted_start, formatted_end, self.liquipedia_url)
+            return const.format_event_date_line.format(start = formatted_start, end = formatted_end, liquipedia_url = self.liquipedia_url)
 
     def formatted(self):
         live_badge = ""
@@ -76,7 +78,7 @@ class Event:
 
         formatted_dates = self.__format_dates()
 
-        return const.format_event.format(live_badge, self.name, url, formatted_prizepool, formatted_dates)
+        return const.format_event.format(live_badge = live_badge, name = self.name, url = url, prizepool = formatted_prizepool, dates = formatted_dates)
 
 class Events:
 

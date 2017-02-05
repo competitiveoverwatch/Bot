@@ -1,18 +1,42 @@
+from config import const
 import praw
 
 blacklist = ["MRW ","MFW ","[rant]","retard","cunt","kys","kill yourself","why the hell","why are you able to","sick and tired",
 "fuck","console fags","you retarded","you're a fucking","nigger","suck dick","autism","fag","fuck that country"]
 
-# TODO: Each rule should fetch its description from the subreddit's rules page
-
-class Rule():
-    def __init__(self, number, name, description):
+class Rule:
+    def __init__(self, number, rules_json):
         self.number = number
+
+        if self.number > 0 and rules_json is not None:
+            self.__parse_definition_json(rules_json)
+
         self.posts = True
         self.comments = True
-        self.name = name
-        self.description = description
+        
+    def __parse_definition_json(self, json):
+        if json is not None:
+            this_rule = json[self.number - 1]
 
+            self.name = "Rule " + this_rule["short_name"]
+            self.description = this_rule["description"]
+
+    def formatted(self):
+        if self.description is not None:
+
+            formatted_text = ""
+
+            if self.name is not None:
+                formatted_text += f"[{self.name}](https://reddit.com/r/{const.subreddit}/about/rules)\n\n"
+
+            formatted_text += self.description
+
+            return formatted_text
+
+        else:
+            return None
+
+    # These methods to be implemented by subclasses
     def valid_post(self, post):
         pass
 
@@ -22,7 +46,7 @@ class Rule():
 class SilentRule(Rule):
 
     def __init__(self):
-        super().__init__(0, None, None)
+        super().__init__(-1, None)
 
     def valid_post(self, post):
         return (post.author.comment_karma > -90 and not "elo hell" in post.title.lower())
@@ -31,15 +55,8 @@ class SilentRule(Rule):
         return (comment.author.comment_karma > -90)
 
 class BehaviorRule(Rule):
-    def __init__(self):
-        super().__init__(1, "No Poor or Abusive Behavior", """Posts and comments that are toxic or break Reddiquette will be removed. This includes, but is not limited to:
- 
-* Personal attacks and hateful language
-* Witch-hunts and vote brigading
-* Posting other users' personal information without consent (doxing)
-* Offering, requesting, or linking to cheats, rank manipulation, or game-breaking exploits
- 
-If you see doxing, [message the mod team](https://www.reddit.com/message/compose?to=%2Fr%2FCompetitiveoverwatch) immediately.""")
+    def __init__(self, rules_json):
+        super().__init__(1, rules_json)
 
     def valid_post(self, post):
         title = post.title.lower()
@@ -57,16 +74,9 @@ If you see doxing, [message the mod team](https://www.reddit.com/message/compose
         return True
 
 class OffTopicLowEffortRule(Rule):
-    def __init__(self):
-        super().__init__(2, "No Off-Topic or Low-effort Content", """Off-topic and low-effort content can flood the subreddit and drown out meaningful discussion. As such, it is prohibited. This includes, but is not limited to:
+    def __init__(self, rules_json):
+        super().__init__(2, rules_json)
 
-* Posts not related to competitive mode / Overwatch esports
-* Non-constructive complaints / rants 
-* Screenshots / Highlight Videos / Gifs (see Rule 8)
-* General gameplay videos
-* Re-posted / repetitive content (please search before you post)
- 
-Post smaller questions in the Weekly Discussion Megathread (right side of the header).""" )
         self.comments = False
 
     def valid_post(self, post):
@@ -98,43 +108,59 @@ Post smaller questions in the Weekly Discussion Megathread (right side of the he
         return True
 
 class LFGRule(Rule):
-    def __init__(self):
-        super().__init__(0, None, """LFG/LFT and related posts are not allowed as individual text posts on the subreddit.
+    def __init__(self, megathread_url):
+        super().__init__(-1, None)
 
-            To prevent the subreddit from being spammed with posts of players looking for teams or teammates, the subreddit runs a **weekly thread (the LFG Megathread)** which can be found in the top-right of the banner. Please direct posts to that thread, or try /r/OverwatchLFT or other websites. Thanks!""")
+        self.name = ""
+        self.description = const.mod_lfg_removal_description.format(lfg_megathread_url = megathread_url)
+
         self.comments = False
 
     def valid_post(self, post):
-        return not any(phrase in post.title.lower() for phrase in ["need teammates for","LFG","LFT","LFM","recruit","start a team","[NA][PC]","[EU][PC]",
-            "[NA][PS4]","[EU][PS4]","[PC][EU]","[PC][NA]","looking for team","looking for a team","looking for a competitive team",
-            "looking for a competitive team","looking for people to play"])
+        return not any(phrase in post.title.lower() for phrase in ["need teammates for","LFG","LFT","LFM","recruit","start a team",
+            "[NA][PC]","[EU][PC]","[NA][PS4]","[EU][PS4]","[PC][EU]","[PC][NA]","looking for team","looking for a team",
+            "looking for a competitive team","looking for a competetive team","looking for people to play"])
 
 class BugRule(Rule):
-    def __init__(self):
-        super().__init__(5, "Bugs, Meta & Balance Topics", "Blizzard keeps a list of known issues stickied at the top of their forums. Post bug reports [on their forums](http://us.battle.net/forums/en/overwatch/22813881/), where they have previously commented on discussions and are better able to take action.")
+    def __init__(self, rules_json):
+        super().__init__(5, rules_json)
         self.comments = False
 
     def valid_post(self, post):
         return not any(phrase in post.title.lower() for phrase in ["issue with matchmaking", "bug", "wouldn't let me join", "server error"])
 
-class Rules:
+class Rules:    
 
-    __post_rules = [LFGRule(), SilentRule(), BehaviorRule(), OffTopicLowEffortRule()]
-    __comment_rules = [SilentRule(), BehaviorRule()]
+    def __init__(self, subreddit, megathreads):
+        self.subreddit = subreddit
+        self.megathreads = megathreads
 
-    @classmethod
-    def validate_post(cls, post):
+        rules_json = self.subreddit.rules()["rules"]
 
-        for rule in cls.__post_rules:
+        # Get the URL for the latest LFG megathread for the LFG removal rule
+        megathreads_list = self.megathreads.get_latest()
+
+        lfg_megathread_url = None
+        for thread in megathreads_list:
+
+            if "LFG" in thread["title"]:
+                lfg_megathread_url = thread["url"]
+                break
+
+        self.__post_rules = [LFGRule(lfg_megathread_url), SilentRule(), BehaviorRule(rules_json), OffTopicLowEffortRule(rules_json)]
+        self.__comment_rules = [SilentRule(), BehaviorRule(rules_json)]
+
+    def validate_post(self, post):
+
+        for rule in self.__post_rules:
             if rule.posts and not rule.valid_post(post):
                 return (False, rule)
 
         return (True, None)
 
-    @classmethod
-    def validate_comment(cls, comment):
+    def validate_comment(self, comment):
 
-        for rule in cls.__comment_rules:
+        for rule in self.__comment_rules:
             if rule.comments and not rule.valid_comment(comment):
                 return (False, rule)
 

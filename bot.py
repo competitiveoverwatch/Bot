@@ -33,6 +33,7 @@ cache_seconds = 60 * 4.5 # Cache for 4.5 minutes
 sidebar_repeat_seconds = 60 * 5 # Update sidebar every 5 minutes
 megathread_repeat_seconds = 60 * 60 # Post megathreads if necessary every hour
 
+# Base class/superclass for all threads/bot modules
 class BotThread(Thread):
     def __init__(self, subreddit, repeat_time):
         super().__init__()
@@ -64,7 +65,8 @@ class BotThread(Thread):
     def main(self):
         pass
 
-class SidebarThread(BotThread):
+# Updates sidebar text
+class SidebarUpdaterThread(BotThread):
 
     def __init__(self, subreddit, repeat_time, twitter_api):
         super().__init__(subreddit, repeat_time)
@@ -88,8 +90,7 @@ class SidebarThread(BotThread):
             logger.error("SIDEBAR: Failed to fetch events")
 
         else:
-            new_sidebar = sidebar_template.replace(const.sidebar_replacement_megathreads, megathreads_str)
-            new_sidebar = new_sidebar.replace(const.sidebar_replacement_events, events_str)
+            new_sidebar = sidebar_template.format(megathreads = megathreads_str, events = events_str)
 
             #print(new_sidebar)
 
@@ -99,31 +100,42 @@ class SidebarThread(BotThread):
 
         logger.info(f"SIDEBAR: Next update in {sidebar_repeat_seconds}s")
 
+# Moderates posts and comments
 class ModerationThread(BotThread):
 
+    def __init__(self, subreddit, repeat_time):
+        super().__init__(subreddit, repeat_time)
+
+        self.megathreads = Megathreads(self.subreddit, None)
+        self.rules = Rules(subreddit, self.megathreads)
+
     def __moderate_post(self, post):
-        valid, rule = Rules.validate_post(post)
+        valid, rule = self.rules.validate_post(post)
         if not valid:
 
-            comment_text = f"\n{const.mod_removal_prefix}\n"
-            for line in rule.description.split("\n"):
-                comment_text += f"\n> {line.strip()}"
+            formatted_rule = rule.formatted()
+            if formatted_rule is not None:
 
-            comment_text += f"\n\n{const.mod_removal_suffix}"
-            logger.debug(f"MODERATOR: Removed '{post.title}' for: {rule.name}")
+                comment_text = f"\n{const.mod_removal_prefix}\n"
+                for line in formatted_rule.split("\n"):
+                    comment_text += f"\n> {line.strip()}"
 
-            comment = post.reply(comment_text)
-            # If we fail to reply (e.g. post is archived etc.)
-            # don't perform other actions either
-            # (BotThread's `try: except:` will break here)
+                comment_text += f"\n\n{const.mod_removal_suffix}"
 
-            comment.mod.distinguish(how = "yes", sticky = True)
+                logger.debug(f"MODERATOR: Removed '{post.title}' for: {rule.name}")
+
+                comment = post.reply(comment_text)
+                # If we fail to reply (e.g. post is archived etc.)
+                # don't perform other actions either
+                # (BotThread's `try: except:` will break here)
+
+                comment.mod.distinguish(how = "yes", sticky = True)
 
             post.mod.remove()
             post.mod.flair() # Remove flair
 
     def __moderate_comment(self, comment, post):
-        valid, rule = Rules.validate_comment(comment)
+        valid, rule = self.rules.validate_comment(comment)
         if not valid:
 
             if comment.parent_id == comment.link_id:
@@ -144,7 +156,8 @@ class ModerationThread(BotThread):
                 if comment.banned_by is None:
                     self.__moderate_comment(comment, post)
 
-class MegathreadSchedulerThread(BotThread):
+# Posts megathreads
+class MegathreadPosterThread(BotThread):
 
     def __init__(self, subreddit, repeat_time):
         super().__init__(subreddit, repeat_time)
@@ -234,13 +247,13 @@ def main():
     auth = authorise_twitter()
     twitter_api = tweepy.API(auth)
 
-    sidebar_thread = SidebarThread(subreddit, sidebar_repeat_seconds, twitter_api)
+    sidebar_thread = SidebarUpdaterThread(subreddit, sidebar_repeat_seconds, twitter_api)
     sidebar_thread.daemon = True
     sidebar_thread.start()
 
     # Megathread scheduler + moderation run on test sub for now
     test_subreddit = reddit.subreddit("co_test")
-    start_thread(MegathreadSchedulerThread, test_subreddit, megathread_repeat_seconds)
+    start_thread(MegathreadPosterThread, test_subreddit, megathread_repeat_seconds)
     start_thread(ModerationThread, test_subreddit, 0) # Doesn't need to repeat - constantly streams
 
     keep_alive_event = Event()

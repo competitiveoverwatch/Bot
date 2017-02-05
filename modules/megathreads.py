@@ -18,7 +18,7 @@ class Megathreads:
 
     @classmethod
     def is_valid_megathread(cls, megathread_date):
-        return Megathreads.days_difference(arrow.utcnow(), arrow.get(megathread_date)) < 6.5
+        return Megathreads.days_difference(arrow.utcnow(), arrow.get(megathread_date)) < 7
 
     @classmethod
     def is_expired_megathread(cls, megathread_date):
@@ -31,10 +31,16 @@ class Megathreads:
     def tweet_megathread(self, index, url):
 
         if self.twitter_api is not None:
-            tweet_text = const.megathreads[index]["tweet"].replace("{{URL}}",url)
+            tweet_text = const.megathreads[index]["tweet"].format(url = url)
             self.twitter_api.update_status(tweet_text)
 
-    def get_formatted_latest(self):
+    # Returns an array of dictionaries (one for each megathread)
+    # Megathread dictionary: {"title": "", "url": ""}
+    def get_latest(self):
+
+        # Remove old megathreads
+        Megathread = Query()
+        db.remove(Megathread.date.test(Megathreads.is_expired_megathread))
 
         keywords = []
         titles = []
@@ -42,33 +48,26 @@ class Megathreads:
             keywords.append(m["keyword"])
             titles.append(m["title"])
 
-        # Remove old megathreads
-        Megathread = Query()
-        db.remove(Megathread.date.test(Megathreads.is_expired_megathread))
+        latest_megathreads = []
 
-        megathreads_str = ""
-        
-        # Loop through remaining megathreads,
-        # append formatted strings for sidebar text
-        megathreads = db.all()
-        for megathread in megathreads:
+        # Loop through valid megathreads, appending to array
+        db_megathreads = db.all()
+        for megathread in db_megathreads:
 
-            title = megathread["title"].lower()
+            title = megathread["title"]
+            title_lower = title.lower()
 
             for index, keyword in enumerate(keywords):
-                if keyword in title:
-                    title = titles[index]
-                    url = megathread["url"]
+                if keyword in title_lower:
 
-                    megathreads.append({"title": title, "url": url, "date": None})
-                    megathreads_str += const.format_megathread.format(title, url)
+                    latest_megathreads.append({"title": title, "url": megathread["url"]})
 
                     # Remove used keywords/titles
                     keywords.pop(index)
                     titles.pop(index)
 
-        # Search for missing (new) megathreads,
-        # insert in DB and append to sidebar text
+        # If we removed any old megathreads earlier,
+        # find the latest megathread links to fill gaps
         if len(keywords) > 0:
 
             for index, keyword in enumerate(keywords):
@@ -83,7 +82,8 @@ class Megathreads:
                     formatted_date = date.format("YYYY-MM-DD")
 
                     db.insert({"title": title, "url": url, "date": formatted_date})
-                    megathreads_str += const.format_megathread.format(title, url)
+
+                    latest_megathreads.append({"title": title, "url": url})
 
                     # In future, tweet when posting megathread instead
                     if Megathreads.days_difference(arrow.utcnow(), date) < 1:
@@ -91,6 +91,15 @@ class Megathreads:
 
                     keywords.pop(index)
                     titles.pop(index)
+
+        return latest_megathreads
+
+    def get_formatted_latest(self):
+
+        megathreads_str = ""
+
+        for megathread in self.get_latest():
+            megathreads_str += const.format_megathread.format(title = megathread["title"], url = megathread["url"])
 
         return megathreads_str
 
