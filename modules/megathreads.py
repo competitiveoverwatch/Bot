@@ -87,7 +87,7 @@ class Megathreads:
 
                     # In future, tweet when posting megathread instead
                     if Megathreads.days_difference(arrow.utcnow(), date) < 1:
-                        tweet_megathread(index, url)
+                        self.tweet_megathread(index, url)
 
                     keywords.pop(index)
                     titles.pop(index)
