@@ -94,6 +94,6 @@ class Twitch():
                 if stream is not None:
                     status = data["stream"]["channel"]["status"]
 
-                    return (status is not None and "RERUN:" not in status)
+                    return (status is not None and not any(x in status.lower() for x in ["rerun:","[rerun]"]))
 
         return False
