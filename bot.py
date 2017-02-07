@@ -72,7 +72,7 @@ class SidebarUpdaterThread(BotThread):
         super().__init__(subreddit, repeat_time)
 
         self.events = Events(logger)
-        self.megathreads = Megathreads(self.subreddit, twitter_api)
+        self.megathreads = Megathreads(logger, self.subreddit, twitter_api)
 
     def main(self):
         logger.info("SIDEBAR: Beginning update")
@@ -83,10 +83,10 @@ class SidebarUpdaterThread(BotThread):
         megathreads_str = self.megathreads.get_formatted_latest()
         events_str = self.events.get_formatted(sidebar_length)
         
-        if megathreads_str is None:
+        if megathreads_str is None or len(megathreads_str) == 0:
             logger.error("SIDEBAR: Failed to fetch megathreads")
 
-        elif events_str is None:
+        elif events_str is None or len(events_str) == 0:
             logger.error("SIDEBAR: Failed to fetch events")
 
         else:
@@ -106,7 +106,7 @@ class ModerationThread(BotThread):
     def __init__(self, subreddit, repeat_time):
         super().__init__(subreddit, repeat_time)
 
-        self.megathreads = Megathreads(self.subreddit, None)
+        self.megathreads = Megathreads(logger, self.subreddit, None)
         self.rules = Rules(subreddit, self.megathreads)
 
     def __moderate_post(self, post):
@@ -161,7 +161,7 @@ class MegathreadPosterThread(BotThread):
 
     def __init__(self, subreddit, repeat_time):
         super().__init__(subreddit, repeat_time)
-        self.megathreads = Megathreads(self.subreddit, None)
+        self.megathreads = Megathreads(logger, self.subreddit, None)
 
     def main(self):
         sec_per_hour = 60*60
@@ -195,7 +195,7 @@ class MegathreadPosterThread(BotThread):
                 next_post = first_timestamp + rounded_time_diff
 
                 if rounded_time_diff is not None and (next_post > now - sec_time_tolerance) and (next_post < now + sec_time_tolerance):
-                    logger.info(f"{thread.title} would be posted now")
+                    logger.info(f"MEGATHREAD: Would post {thread.title} now")
                     self.megathreads.post(thread, now)
 
 def authorise_twitter():

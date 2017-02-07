@@ -12,7 +12,8 @@ db = TinyDB("db/megathreads.json")
 
 class Megathreads:
 
-    def __init__(self, subreddit, twitter_api):
+    def __init__(self, logger, subreddit, twitter_api):
+        self.logger = logger
         self.subreddit = subreddit
         self.twitter_api = twitter_api
 
@@ -125,7 +126,7 @@ class Megathreads:
                 submission.mod.distinguish(how = "yes")
 
             else:
-                raise ValueError("Invalid schedule thread")
+                logger.error("Attempted to post invalid scheduled thread")
 
         else:
-            raise TypeError("Wrong argument type for `post(scheduled_thread)` (expected ScheduledThread)")
+            logger.error("Wrong argument type for `post(scheduled_thread)` (expected ScheduledThread)")
