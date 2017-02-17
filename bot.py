@@ -1,7 +1,8 @@
 from config import const, creds
 
-from modules.events import Events
 from modules.megathreads import Megathreads
+from modules.events import Events
+from modules.matches import Matches
 from modules.ScheduledThread import ScheduledThread
 from modules.rules import Rule, Rules
 
@@ -71,8 +72,9 @@ class SidebarUpdaterThread(BotThread):
     def __init__(self, subreddit, repeat_time, twitter_api):
         super().__init__(subreddit, repeat_time)
 
-        self.events = Events(logger)
         self.megathreads = Megathreads(logger, self.subreddit, twitter_api)
+        self.events = Events(logger)
+        self.matches = Matches(logger)
 
     def main(self):
         logger.info("SIDEBAR: Beginning update")
@@ -81,20 +83,26 @@ class SidebarUpdaterThread(BotThread):
         sidebar_length = len(sidebar_template)
         
         megathreads_str = self.megathreads.get_formatted_latest()
+        sidebar_length -= (len(megathreads_str) - len(const.sidebar_replacement_megathreads))
+
         events_str = self.events.get_formatted(sidebar_length)
+        sidebar_length -= (len(events_str) - len(const.sidebar_replacement_events))
+
+        matches_str = self.matches.get_formatted(sidebar_length)
+        sidebar_length -= (len(matches_str) - len(const.sidebar_replacement_matches))
         
         if megathreads_str is None or len(megathreads_str) == 0:
             logger.error("SIDEBAR: Failed to fetch megathreads")
 
-        elif events_str is None or len(events_str) == 0:
-            logger.error("SIDEBAR: Failed to fetch events")
+        #elif events_str is None or len(events_str) == 0:
+        #    logger.error("SIDEBAR: Failed to fetch events")
 
         else:
             new_sidebar = sidebar_template.format(megathreads = megathreads_str, events = events_str)
 
-            #print(new_sidebar)
+            print(new_sidebar)
 
-            self.subreddit.mod.update(description = new_sidebar, key_color = const.key_color, spoilers_enabled = const.spoilers_enabled)
+            #self.subreddit.mod.update(description = new_sidebar, key_color = const.key_color, spoilers_enabled = const.spoilers_enabled)
 
             logger.info("SIDEBAR: Successfully updated")
 
@@ -252,9 +260,9 @@ def main():
     sidebar_thread.start()
 
     # Megathread scheduler + moderation run on test sub for now
-    test_subreddit = reddit.subreddit("co_test")
-    start_thread(MegathreadPosterThread, test_subreddit, megathread_repeat_seconds)
-    start_thread(ModerationThread, test_subreddit, 0) # Doesn't need to repeat - constantly streams
+    #test_subreddit = reddit.subreddit("co_test")
+    #start_thread(MegathreadPosterThread, test_subreddit, megathread_repeat_seconds)
+    #start_thread(ModerationThread, test_subreddit, 0) # Doesn't need to repeat - constantly streams
 
     keep_alive_event = Event()
     keep_alive_event.wait()

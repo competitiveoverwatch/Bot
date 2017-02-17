@@ -2,6 +2,7 @@ from config import const
 
 import arrow
 import requests
+import requests.exceptions
 from modules.twitch import Twitch
 from operator import attrgetter
 

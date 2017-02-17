@@ -20,6 +20,7 @@ Please direct posts to that thread, /r/OverwatchLFT, or use external websites. T
 ### Sidebar formatting
 sidebar_replacement_megathreads = "{megathreads}"
 sidebar_replacement_events = "{events}"
+sidebar_replacement_matches = "{matches}"
 
 ## Megathreads
 megathreads = [

@@ -18,6 +18,8 @@ class Twitch():
         "User-Agent": const.user_agent
     }
 
+    __status_blacklist = ["rerun:","[rerun]","rebroadcast"]
+
     def __init__(self, logger):
         self.logger = logger
 
@@ -94,6 +96,6 @@ class Twitch():
                 if stream is not None:
                     status = data["stream"]["channel"]["status"]
 
-                    return (status is not None and not any(x in status.lower() for x in ["rerun:","[rerun]"]))
+                    return (status is not None and not any(x in status.lower() for x in self.__status_blacklist))
 
         return False
