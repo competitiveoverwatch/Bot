@@ -100,9 +100,9 @@ class SidebarUpdaterThread(BotThread):
         else:
             new_sidebar = sidebar_template.format(megathreads = megathreads_str, events = events_str)
 
-            print(new_sidebar)
+            #print(new_sidebar)
 
-            #self.subreddit.mod.update(description = new_sidebar, key_color = const.key_color, spoilers_enabled = const.spoilers_enabled)
+            self.subreddit.mod.update(description = new_sidebar, key_color = const.key_color, spoilers_enabled = const.spoilers_enabled)
 
             logger.info("SIDEBAR: Successfully updated")
 
