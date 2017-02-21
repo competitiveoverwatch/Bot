@@ -1,3 +1,5 @@
+DEBUG = False
+
 subreddit = "CompetitiveOverwatch"
 key_color = "#545452" # Reddit's "dark grey"
 spoilers_enabled = True

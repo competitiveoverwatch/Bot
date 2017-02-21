@@ -1,4 +1,6 @@
 # Fill in these, and remove ".template" from the filename
+# Over.gg API
+over_gg_matches_upcoming = ""
 
 # Reddit
 reddit_client_id = ""

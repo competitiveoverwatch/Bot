@@ -31,7 +31,7 @@ class Megathreads:
 
     def tweet_megathread(self, index, url):
 
-        if self.twitter_api is not None:
+        if self.twitter_api is not None and not const.DEBUG:
             tweet_text = const.megathreads[index]["tweet"].format(url = url)
             self.twitter_api.update_status(tweet_text)
 
