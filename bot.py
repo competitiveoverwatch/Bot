@@ -102,7 +102,7 @@ class SidebarUpdaterThread(BotThread):
 
             #print(new_sidebar)
 
-            self.subreddit.mod.update(description = new_sidebar, key_color = const.key_color, spoilers_enabled = const.spoilers_enabled)
+            self.subreddit.mod.update(description = new_sidebar, key_color = const.key_color)
 
             logger.info("SIDEBAR: Successfully updated")
 
