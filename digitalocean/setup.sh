@@ -1,7 +1,7 @@
 #!/bin/sh
 
-apt-get install python3-pip -y
 apt-get install python3.6 -y
+python3.6 -m pip install --upgrade pip
 
 cd /
 
@@ -17,7 +17,7 @@ else
 	echo "Cloned bot"
 fi
 
-pip install -Ur requirements.txt
+python3.6 -m pip install -Ur requirements.txt
 echo "Installed Python dependencies"
 
 echo "Starting bot"
