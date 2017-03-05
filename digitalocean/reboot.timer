@@ -1,0 +1,11 @@
+[Unit]
+Description=Reboot @ 3am
+
+[Timer]
+# Daily at 3am
+OnCalendar=*-*-* 03:00:00
+Persistent=True
+Unit=reboot.service
+
+[Install]
+WantedBy=multi-user.target

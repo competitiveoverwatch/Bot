@@ -1,0 +1,10 @@
+[Unit]
+Description=r/CompetitiveOverwatch Bot
+After=update.service
+
+[Service]
+ExecStart=/bot/digitalocean/start.sh
+Restart=always
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=System Updates
+
+[Service]
+Type=simple
+ExecStart=/bot/digitalocean/update.sh
+Restart=always
+
+[Install]
+WantedBy=default.target
