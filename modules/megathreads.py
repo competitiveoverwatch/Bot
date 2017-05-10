@@ -31,7 +31,7 @@ class Megathreads:
 
     def tweet_megathread(self, index, url):
 
-        if self.twitter_api is not None and not config.main.DEBUG:
+        if self.twitter_api is not None and not config.debug:
             tweet_text = config.sidebar.megathreads[index]["tweet"].format(url = url)
             self.twitter_api.update_status(tweet_text)
 
