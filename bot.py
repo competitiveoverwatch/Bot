@@ -1,4 +1,4 @@
-from config import const, creds
+from config import data as config
 
 from modules.megathreads import Megathreads
 from modules.events import Events
@@ -83,13 +83,13 @@ class SidebarUpdaterThread(BotThread):
         sidebar_length = len(sidebar_template)
         
         megathreads_str = self.megathreads.get_formatted_latest()
-        sidebar_length -= (len(megathreads_str) - len(const.sidebar_replacement_megathreads))
+        sidebar_length -= (len(megathreads_str) - len(config.sidebar.replacementMegathreads))
 
         events_str = self.events.get_formatted(sidebar_length)
-        sidebar_length -= (len(events_str) - len(const.sidebar_replacement_events))
+        sidebar_length -= (len(events_str) - len(config.sidebar.replacementEvents))
 
         matches_str = self.matches.get_formatted(sidebar_length)
-        sidebar_length -= (len(matches_str) - len(const.sidebar_replacement_matches))
+        sidebar_length -= (len(matches_str) - len(config.sidebar.replacementMatches))
         
         if megathreads_str is None or len(megathreads_str) == 0:
             logger.error("SIDEBAR: Failed to fetch megathreads")
@@ -100,9 +100,12 @@ class SidebarUpdaterThread(BotThread):
         else:
             new_sidebar = sidebar_template.format(megathreads = megathreads_str, events = events_str)
 
-            #print(new_sidebar)
+            if (config.debug == True):
+                print(new_sidebar)
 
-            self.subreddit.mod.update(description = new_sidebar, key_color = const.key_color)
+            else:
+                #Update sidebar
+                self.subreddit.mod.update(description = new_sidebar, key_color = config.keyColor)
 
             logger.info("SIDEBAR: Successfully updated")
 
@@ -124,11 +127,11 @@ class ModerationThread(BotThread):
             formatted_rule = rule.formatted()
             if formatted_rule is not None:
 
-                comment_text = f"\n{const.mod_removal_prefix}\n"
+                comment_text = f"\n{moderation.removal_prefix}\n"
                 for line in formatted_rule.split("\n"):
                     comment_text += f"\n> {line.strip()}"
 
-                comment_text += f"\n\n{const.mod_removal_suffix}"
+                comment_text += f"\n\n{moderation.removal_suffix}"
 
                 logger.debug(f"MODERATOR: Removed '{post.title}' for: {rule.name}")
 
@@ -207,12 +210,12 @@ class MegathreadPosterThread(BotThread):
                     self.megathreads.post(thread, now)
 
 def authorise_twitter():
-    auth = tweepy.OAuthHandler(creds.twitter_consumer_token, creds.twitter_consumer_secret)
-    auth.set_access_token(creds.twitter_access_token, creds.twitter_access_token_secret)
+    auth = tweepy.OAuthHandler(config.creds.twitterConsumerToken, config.creds.twitterConsumerSecret)
+    auth.set_access_token(config.creds.twitterAccessToken, config.creds.twitterAccessTokenSecret)
 
     # At the moment, Twitter access tokens do not expire unless revoked.
     # The bot runs on a subreddit-owned Twitter account only, so we should
-    # be fine to generate once, and stored permanently in `creds.py`.
+    # be fine to generate once, and stored permanently in `config.creds.py`.
 
     '''
     try:
@@ -244,13 +247,13 @@ def main():
 
     requests_cache.install_cache("db/requests_cache", expire_after = cache_seconds, old_data_on_error = True)
 
-    reddit = praw.Reddit(client_id = creds.reddit_client_id,
-                         client_secret = creds.reddit_client_secret,
-                         password = creds.reddit_password,
-                         user_agent = const.user_agent,
-                         username = creds.reddit_username)
+    reddit = praw.Reddit(client_id = config.creds.redditClientId,
+                         client_secret = config.creds.redditClientSecret,
+                         password = config.creds.redditPassword,
+                         user_agent = config.userAgentFormat.format(subreddit = config.subredditName),
+                         username = config.creds.redditUsername)
 
-    subreddit = reddit.subreddit(const.subreddit)
+    subreddit = reddit.subreddit(config.subredditName)
 
     auth = authorise_twitter()
     twitter_api = tweepy.API(auth)
@@ -262,7 +265,7 @@ def main():
     # Megathread scheduler + moderation run on test sub for now
     test_subreddit = reddit.subreddit("co_test")
     start_thread(MegathreadPosterThread, test_subreddit, megathread_repeat_seconds)
-    start_thread(ModerationThread, test_subreddit, 0) # Doesn't need to repeat - constantly streams
+    start_thread(ModerationThread, test_subreddit, 0) # Doesn't need to repeat - globalantly streams
 
     keep_alive_event = Event()
     keep_alive_event.wait()

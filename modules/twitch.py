@@ -1,4 +1,4 @@
-from config import const, creds
+from config import data as config
 import requests
 from tinydb import TinyDB, Query
 from urllib.parse import urlparse
@@ -14,8 +14,8 @@ class Twitch():
 
     __headers = {
         "Accept": "application/vnd.twitchtv.v5+json",
-        "Client-ID": creds.twitch_client_id,
-        "User-Agent": const.user_agent
+        "Client-ID": config.creds.twitchClientId,
+        "User-Agent": config.userAgentFormat.format(subreddit = config.subredditName)
     }
 
     __status_blacklist = ["rerun:","[rerun]","rebroadcast"]

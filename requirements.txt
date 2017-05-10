@@ -1,6 +1,6 @@
 arrow==0.10.0
-praw==4.4.0
-requests==2.13.0
+praw==4.5.1
+requests==2.14.2
 requests-cache==0.4.13
-tinydb==3.2.2
+tinydb==3.2.3
 tweepy==3.5.0

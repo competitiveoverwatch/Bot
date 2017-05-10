@@ -1,4 +1,4 @@
-from config import const
+from config import data as config
 
 import arrow
 import requests
@@ -6,6 +6,7 @@ import requests.exceptions
 from modules.twitch import Twitch
 from operator import attrgetter
 
+#Parses json for a single event into an Event object
 class Event:
 
     def __init__(self, event_printouts_json, twitch):
@@ -21,8 +22,8 @@ class Event:
         self.name = printouts["Has name"][0]
         self.liquipedia_url = event_printouts_json["fullurl"]
 
-        self.start = arrow.get(printouts["Has start date"][0])
-        self.end = arrow.get(printouts["Has end date"][0])
+        self.start = arrow.get(printouts["Has start date"][0]["timestamp"])
+        self.end = arrow.get(printouts["Has end date"][0]["timestamp"])
 
         # Use Twitch URL for link (and check if live) if it exists
         # otherwise use the Liquipedia URL
@@ -46,28 +47,28 @@ class Event:
         # If start == end, event may have been rescheduled/something else happened
         # e.g. this happened with Masters Gaming Arena 2016
         if self.start == self.end:
-            return const.format_event_date_tba
+            return config.sidebar.formatEventDateTba
 
         else:
             formatted_start = None
             if self.start <= now:
-                formatted_start = const.format_event_date_started
+                formatted_start = config.sidebar.formatEventDateStarted
             else:
-                formatted_start = self.start.format(const.format_event_date)
+                formatted_start = self.start.format(config.sidebar.formatEventDate)
 
             formatted_end = None
             # Check `start > now` to avoid "Ongoing – 31" or similar nonsense
             if (self.start.month == self.end.month) and self.start > now:
-                formatted_end = self.end.format(const.format_event_date_same_month)
+                formatted_end = self.end.format(config.sidebar.formatEventDateSameMonth)
             else:
-                formatted_end = self.end.format(const.format_event_date)
+                formatted_end = self.end.format(config.sidebar.formatEventDate)
 
-            return const.format_event_date_line.format(start = formatted_start, end = formatted_end, liquipedia_url = self.liquipedia_url)
+            return config.sidebar.formatEventDateLine.format(start = formatted_start, end = formatted_end, liquipedia_url = self.liquipedia_url)
 
     def formatted(self):
         live_badge = ""
         if self.is_live():
-            live_badge = const.format_event_live
+            live_badge = config.sidebar.formatEventLive
 
         url = self.liquipedia_url if (self.twitch_url is None) else self.twitch_url
 
@@ -75,12 +76,16 @@ class Event:
         if self.prizepool > 0:
             # Round prizepool to nearest 10, add commas
             rounded_prizepool = round(self.prizepool, -1)
-            formatted_prizepool = const.format_event_prizepool.format(rounded_prizepool)
+            formatted_prizepool = config.sidebar.formatEventPrizepool.format(rounded_prizepool)
 
         formatted_dates = self.__format_dates()
 
-        return const.format_event.format(live_badge = live_badge, name = self.name, url = url, prizepool = formatted_prizepool, dates = formatted_dates)
+        return config.sidebar.formatEvent.format(live_badge = live_badge, name = self.name, url = url, prizepool = formatted_prizepool, dates = formatted_dates)
 
+#Given an instantiated Twitch object,
+#fetches Premier/Major tournaments from Liquipedia
+#formats for sidebar, and adds live badge if Twitch
+#stream found and it's live.
 class Events:
 
     def __init__(self, logger):
@@ -112,7 +117,7 @@ class Events:
         }
 
         headers = {
-            "User-Agent": const.user_agent
+            "User-Agent": config.userAgentFormat.format(subreddit = config.subredditName)
         }
 
         url = "http://wiki.teamliquid.net/overwatch/api.php"
@@ -153,7 +158,7 @@ class Events:
                 new_event_text = event.formatted()
                 new_event_text_len = len(new_event_text)
 
-                if (sidebar_length + len(sidebar_text) + new_event_text_len) > const.sidebar_length_limit:
+                if (sidebar_length + len(sidebar_text) + new_event_text_len) > config.sidebarLengthLimit:
                     break
 
                 else:

@@ -1,5 +1,4 @@
-from config import const
-from config import creds
+from config import data as config
 
 import arrow
 import requests
@@ -45,14 +44,14 @@ class Matches:
 
     def __get_matches_json(self):
         try:
-            data = requests.get(creds.over_gg_matches_upcoming, headers = {
-                "User-Agent": const.user_agent
+            data = requests.get(config.creds.overGGMatchesUpcoming, headers = {
+                "User-Agent": config.userAgentFormat.format(subreddit = config.subredditName)
             })
             data.raise_for_status()
             data = data.json()
             return data
 
-        except (HTTPError, ValueError) as e:
+        except Exception as e:
             self.logger.exception(e)
             return None
 

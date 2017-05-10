@@ -1,6 +1,6 @@
 # [/r/CompetitiveOverwatch](https://reddit.com/r/competitiveoverwatch)'s Sidebar Bot
 
-##About
+## About
 * Updates sidebar every 5 minutes
     - Fetches sidebar template from wiki
     - Replaces `{{MEGATHREADS}}` placeholder with the latest links to 3 weekly megathreads

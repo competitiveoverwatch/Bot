@@ -1,5 +1,5 @@
 import arrow
-from config import const
+from config import data as config
 from tinydb import TinyDB, Query
 import tweepy
 from modules.ScheduledThread import ScheduledThread
@@ -31,8 +31,8 @@ class Megathreads:
 
     def tweet_megathread(self, index, url):
 
-        if self.twitter_api is not None and not const.DEBUG:
-            tweet_text = const.megathreads[index]["tweet"].format(url = url)
+        if self.twitter_api is not None and not config.main.DEBUG:
+            tweet_text = config.sidebar.megathreads[index]["tweet"].format(url = url)
             self.twitter_api.update_status(tweet_text)
 
     # Returns an array of dictionaries (one for each megathread)
@@ -45,9 +45,9 @@ class Megathreads:
 
         keywords = []
         titles = []
-        for m in const.megathreads:
-            keywords.append(m["keyword"])
-            titles.append(m["title"])
+        for m in config.sidebar.megathreads:
+            keywords.append(m.keyword)
+            titles.append(m.title)
 
         latest_megathreads = []
 
@@ -100,7 +100,7 @@ class Megathreads:
         megathreads_str = ""
 
         for megathread in self.get_latest():
-            megathreads_str += const.format_megathread.format(title = megathread["title"], url = megathread["url"])
+            megathreads_str += config.sidebar.formatMegathread.format(title = megathread["title"], url = megathread["url"])
 
         return megathreads_str
 

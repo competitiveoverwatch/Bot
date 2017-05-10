@@ -123,6 +123,7 @@ ENV/
 
 # Custom
 cache.sqlite
-creds.py
+*/creds.py
+*/creds.json
 logs/*
 db/*

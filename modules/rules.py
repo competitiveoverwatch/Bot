@@ -1,4 +1,4 @@
-from config import const
+from config import data as config
 import praw
 
 blacklist = ["MRW ","MFW ","[rant]","retard","cunt","kys","kill yourself","why the hell","why are you able to","sick and tired",
@@ -27,7 +27,7 @@ class Rule:
             formatted_text = ""
 
             if self.name is not None:
-                formatted_text += f"[{self.name}](https://reddit.com/r/{const.subreddit}/about/rules)\n\n"
+                formatted_text += f"[{self.name}](https://reddit.com/r/{config.subredditName}/about/rules)\n\n"
 
             formatted_text += self.description
 
@@ -112,7 +112,7 @@ class LFGRule(Rule):
         super().__init__(-1, None)
 
         self.name = ""
-        self.description = const.mod_lfg_removal_description.format(lfg_megathread_url = megathread_url)
+        self.description = config.moderation.lfgRemovalDescriptionFormat.format(lfg_megathread_url = megathread_url)
 
         self.comments = False
 

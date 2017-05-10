@@ -1,0 +1,17 @@
+{
+    "overGGUpcomingMatchesUrl": "",
+
+    "redditClientId": "",
+    "redditClientSecret": "",
+
+    "redditUsername": "",
+    "redditPassword": "",
+
+    "twitchClientId": "",
+
+    "twitterConsumerToken": "",
+    "twitterConsumerSecret": "",
+
+    "twitterAccessToken": "",
+    "twitterAccessTokenSecret": ""
+}
